@@ -183,20 +183,20 @@ require('lazy').setup {
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sv', builtin.git_files, {})
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
-      vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
+      vim.keymap.set('n', '<leader>sw', function()
+        local word = vim.fn.expand '<cword>'
+        builtin.grep_string { search = word }
+      end)
+      vim.keymap.set('n', '<leader>sW', function()
+        local word = vim.fn.expand '<cWORD>'
+        builtin.grep_string { search = word }
+      end)
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
-      vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
-
-      vim.keymap.set('n', '<leader>/', function()
-        builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-          winblend = 10,
-          previewer = false,
-        })
-      end, { desc = '[/] Fuzzily search in current buffer' })
 
       vim.keymap.set('n', '<leader>s/', function()
         builtin.live_grep {
@@ -204,23 +204,93 @@ require('lazy').setup {
           prompt_title = 'Live Grep in Open Files',
         }
       end, { desc = '[S]earch [/] in Open Files' })
-
-      vim.keymap.set('n', '<leader>sn', function()
-        builtin.find_files { cwd = vim.fn.stdpath 'config' }
-      end, { desc = '[S]earch [N]eovim files' })
     end,
   },
 
-  { -- LSP Configuration & Plugins
+  {
     'neovim/nvim-lspconfig',
     dependencies = {
       'williamboman/mason.nvim',
       'williamboman/mason-lspconfig.nvim',
-      'WhoIsSethDaniel/mason-tool-installer.nvim',
-
-      { 'j-hui/fidget.nvim', opts = {} },
+      'hrsh7th/cmp-nvim-lsp',
+      'hrsh7th/cmp-buffer',
+      'hrsh7th/cmp-path',
+      'hrsh7th/cmp-cmdline',
+      'hrsh7th/nvim-cmp',
+      'L3MON4D3/LuaSnip',
+      'saadparwaiz1/cmp_luasnip',
+      'j-hui/fidget.nvim',
     },
+
     config = function()
+      local cmp = require 'cmp'
+      local cmp_lsp = require 'cmp_nvim_lsp'
+      local capabilities = vim.tbl_deep_extend('force', {}, vim.lsp.protocol.make_client_capabilities(), cmp_lsp.default_capabilities())
+
+      require('fidget').setup {}
+      require('mason').setup()
+      require('mason-lspconfig').setup {
+        ensure_installed = {
+          'lua_ls',
+          'rust_analyzer',
+          'tsserver',
+        },
+        handlers = {
+          function(server_name) -- default handler (optional)
+            require('lspconfig')[server_name].setup {
+              capabilities = capabilities,
+            }
+          end,
+
+          ['lua_ls'] = function()
+            local lspconfig = require 'lspconfig'
+            lspconfig.lua_ls.setup {
+              capabilities = capabilities,
+              settings = {
+                Lua = {
+                  diagnostics = {
+                    globals = { 'vim', 'it', 'describe', 'before_each', 'after_each' },
+                  },
+                },
+              },
+            }
+          end,
+        },
+      }
+
+      local cmp_select = { behavior = cmp.SelectBehavior.Select }
+
+      cmp.setup {
+        snippet = {
+          expand = function(args)
+            require('luasnip').lsp_expand(args.body) -- For `luasnip` users.
+          end,
+        },
+        mapping = cmp.mapping.preset.insert {
+          ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
+          ['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
+          ['<C-y>'] = cmp.mapping.confirm { select = true },
+          ['<C-Space>'] = cmp.mapping.complete(),
+        },
+        sources = cmp.config.sources({
+          { name = 'nvim_lsp' },
+          { name = 'luasnip' }, -- For luasnip users.
+        }, {
+          { name = 'buffer' },
+        }),
+      }
+
+      vim.diagnostic.config {
+        -- update_in_insert = true,
+        float = {
+          focusable = false,
+          style = 'minimal',
+          border = 'rounded',
+          source = 'always',
+          header = '',
+          prefix = '',
+        },
+      }
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
@@ -262,57 +332,6 @@ require('lazy').setup {
           end
         end,
       })
-
-      local capabilities = vim.lsp.protocol.make_client_capabilities()
-      capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
-
-      local servers = {
-        lua_ls = {
-          settings = {
-            Lua = {
-              runtime = { version = 'LuaJIT' },
-              workspace = {
-                checkThirdParty = false,
-                library = {
-                  '${3rd}/luv/library',
-                  unpack(vim.api.nvim_get_runtime_file('', true)),
-                },
-              },
-              completion = {
-                callSnippet = 'Replace',
-              },
-              -- diagnostics = { disable = { 'missing-fields' } },
-            },
-          },
-        },
-      }
-
-      -- Ensure the servers and tools above are installed
-      --  To check the current status of installed tools and/or manually install
-      --  other tools, you can run
-      --    :Mason
-      --
-      --  You can press `g?` for help in this menu
-      require('mason').setup()
-
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format lua code
-      })
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
-
-      require('mason-lspconfig').setup {
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for tsserver)
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
-        },
-      }
     end,
   },
 
@@ -333,63 +352,6 @@ require('lazy').setup {
         -- is found.
         -- javascript = { { "prettierd", "prettier" } },
       },
-    },
-  },
-
-  {
-
-    'VonHeikemen/lsp-zero.nvim',
-    config = function()
-      local cmp = require 'cmp'
-      local luasnip = require 'luasnip'
-
-      luasnip.config.setup {}
-
-      cmp.setup {
-        completion = { completeopt = 'menu,menuone,noinsert' },
-        mapping = cmp.mapping.preset.insert {
-          ['<C-n>'] = cmp.mapping.select_next_item(),
-          ['<C-p>'] = cmp.mapping.select_prev_item(),
-
-          ['<C-y>'] = cmp.mapping.confirm { select = true },
-
-          ['<C-Space>'] = cmp.mapping.complete {},
-
-          ['<C-l>'] = cmp.mapping(function()
-            if luasnip.expand_or_locally_jumpable() then
-              luasnip.expand_or_jump()
-            end
-          end, { 'i', 's' }),
-          ['<C-h>'] = cmp.mapping(function()
-            if luasnip.locally_jumpable(-1) then
-              luasnip.jump(-1)
-            end
-          end, { 'i', 's' }),
-        },
-        sources = {
-          { name = 'nvim_lsp' },
-          { name = 'luasnip' },
-          { name = 'path' },
-        },
-      }
-    end,
-    dependencies = {
-      -- LSP Support
-      'neovim/nvim-lspconfig',
-      'williamboman/mason.nvim',
-      'williamboman/mason-lspconfig.nvim',
-
-      -- Autocompletion
-      'hrsh7th/nvim-cmp',
-      'hrsh7th/cmp-buffer',
-      'hrsh7th/cmp-path',
-      'saadparwaiz1/cmp_luasnip',
-      'hrsh7th/cmp-nvim-lsp',
-      'hrsh7th/cmp-nvim-lua',
-
-      -- Snippets
-      'L3MON4D3/LuaSnip',
-      'rafamadriz/friendly-snippets',
     },
   },
 
