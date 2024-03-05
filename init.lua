@@ -183,7 +183,7 @@ require('lazy').setup {
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
-      vim.keymap.set('n', '<leader>sv', builtin.git_files, {})
+      vim.keymap.set('n', '<leader>sv', builtin.git_files, { desc = '[S]earch [V]ersion control' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', function()
         local word = vim.fn.expand '<cword>'
@@ -193,6 +193,12 @@ require('lazy').setup {
         local word = vim.fn.expand '<cWORD>'
         builtin.grep_string { search = word }
       end)
+      vim.keymap.set('n', '<leader>/', function()
+        builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
+          winblend = 10,
+          previewer = false,
+        })
+      end, { desc = '[/] Fuzzily search in current buffer' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
@@ -442,6 +448,82 @@ require('lazy').setup {
       }
     end,
   },
+  {
+    'tpope/vim-fugitive',
+    config = function()
+      vim.keymap.set('n', '<leader>gs', vim.cmd.Git)
+
+      local Joan_Fugitive = vim.api.nvim_create_augroup('ThePrimeagen_Fugitive', {})
+
+      local autocmd = vim.api.nvim_create_autocmd
+      autocmd('BufWinEnter', {
+        group = Joan_Fugitive,
+        pattern = '*',
+        callback = function()
+          if vim.bo.ft ~= 'fugitive' then
+            return
+          end
+
+          local bufnr = vim.api.nvim_get_current_buf()
+          local opts = { buffer = bufnr, remap = false }
+          vim.keymap.set('n', '<leader>p', function()
+            vim.cmd.Git 'push'
+          end, opts)
+
+          -- rebase always
+          vim.keymap.set('n', '<leader>P', function()
+            vim.cmd.Git { 'pull', '--rebase' }
+          end, opts)
+
+          -- NOTE: It allows me to easily set the branch i am pushing and any tracking
+          -- needed if i did not set the branch up correctly
+          vim.keymap.set('n', '<leader>t', ':Git push -u origin ', opts)
+        end,
+      })
+
+      vim.keymap.set('n', 'gu', '<cmd>diffget //2<CR>')
+      vim.keymap.set('n', 'gh', '<cmd>diffget //3<CR>')
+    end,
+    {},
+  },
+  {
+    'ThePrimeagen/harpoon',
+    branch = 'harpoon2',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      local harpoon = require 'harpoon'
+
+      -- REQUIRED
+      harpoon:setup()
+      -- REQUIRED
+
+      vim.keymap.set('n', '<leader>a', function()
+        harpoon:list():append()
+      end)
+      vim.keymap.set('n', '<C-e>', function()
+        harpoon.ui:toggle_quick_menu(harpoon:list())
+      end)
+
+      vim.keymap.set('n', '<C-h>', function()
+        harpoon:list():select(1)
+      end)
+      vim.keymap.set('n', '<C-t>', function()
+        harpoon:list():select(2)
+      end)
+      vim.keymap.set('n', '<C-n>', function()
+        harpoon:list():select(3)
+      end)
+      vim.keymap.set('n', '<C-s>', function()
+        harpoon:list():select(4)
+      end)
+
+      -- Toggle previous & next buffers stored within Harpoon list
+      vim.keymap.set('n', '<C-S-P>', function()
+        harpoon:list():prev()
+      end)
+      vim.keymap.set('n', '<C-S-N>', function()
+        harpoon:list():next()
+      end)
+    end,
+  },
 }
--- require 'kickstart.plugins.debug',
--- require 'kickstart.plugins.indent_line',
