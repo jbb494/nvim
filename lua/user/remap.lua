@@ -136,16 +136,7 @@ end)
 -- Fugitive
 M.map_fugitive_keybindings = function(bufnr)
     -- [F]ugitive
-    vim.keymap.set('n', '<leader>Fp', function()
-        vim.cmd.Git 'push'
-    end, { buffer = bufnr, remap = false, desc = '[F]ugitive [P]ush' })
-
-    vim.keymap.set('n', '<leader>FP', function()
-        vim.cmd.Git { 'pull', '--rebase' }
-    end, { buffer = bufnr, remap = false, desc = '[F]ugitive [P]ull' })
-
-    vim.keymap.set('n', '<leader>Fb', ':Git push -u origin ',
-        { buffer = bufnr, remap = false, desc = '[F]ugitive [B]ranch' })
+    -- [TODO] add git things
 end
 
 return M
