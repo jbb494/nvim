@@ -25,7 +25,8 @@ return {
       view_options = {
         -- Show files and directories that start with "."
         show_hidden = true,
-      }
+      },
+      skip_confirm_for_simple_edits = true,
     },
     -- Optional dependencies
     dependencies = { "nvim-tree/nvim-web-devicons" },

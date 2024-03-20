@@ -50,6 +50,7 @@ end)
 -- Telescope
 -- [S]earch
 local builtin = require 'telescope.builtin'
+
 vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sv', builtin.git_files, { desc = '[S]earch [V]ersion control' })
@@ -132,6 +133,8 @@ vim.keymap.set('n', 'tp', function()
     require('trouble').open()
     require('trouble').previous { skip_groups = true, jump = true }
 end)
+
+vim.keymap.set('n', 'to', vim.diagnostic.open_float)
 
 -- Fugitive
 M.map_fugitive_keybindings = function(bufnr)

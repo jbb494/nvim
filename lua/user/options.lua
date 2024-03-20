@@ -1,4 +1,3 @@
-vim.opt.mouse = {}
 -- Enable relative line numbers
 vim.opt.nu = true
 vim.opt.rnu = true
@@ -31,7 +30,7 @@ vim.opt.splitbelow = true
 vim.opt.splitright = true
 
 -- Enable mouse mode
-vim.opt.mouse = "a"
+vim.opt.mouse = {}
 
 -- Enable ignorecase + smartcase for better searching
 vim.opt.ignorecase = true
