@@ -1,8 +1,6 @@
 local M = {}
 
 
-vim.keymap.set('n', '<leader>w', '<cmd>w<cr>', { silent = false })
-
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 vim.keymap.set('n', '<C-d>', '<C-d>zz')
@@ -117,21 +115,25 @@ M.map_lsp_keybinds = function(buffer_number)
     vim.keymap.set('n', 'K', vim.lsp.buf.hover, { desc = 'Hover Documentation', buffer = buffer_number })
 end
 
-
+vim.keymap.set('n', '[q', '<CMD>cprevious<CR>', { silent = true })
+vim.keymap.set('n', ']q', '<CMD>cnext<CR>', { silent = true })
+vim.keymap.set('n', '[Q', '<CMD>cfirst<CR>', { silent = true })
+vim.keymap.set('n', ']Q', '<CMD>clast<CR>', { silent = true })
 
 --
 -- [T]rouble
 vim.keymap.set('n', 'tt', function()
     require('trouble').toggle()
 end)
-vim.keymap.set('n', 'tn', function()
-    require('trouble').open()
-    require('trouble').next { skip_groups = true, jump = true }
-end)
 
-vim.keymap.set('n', 'tp', function()
+vim.keymap.set('n', '[t', function()
     require('trouble').open()
     require('trouble').previous { skip_groups = true, jump = true }
+end)
+
+vim.keymap.set('n', ']t', function()
+    require('trouble').open()
+    require('trouble').next { skip_groups = true, jump = true }
 end)
 
 vim.keymap.set('n', 'to', vim.diagnostic.open_float)
