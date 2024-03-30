@@ -9,6 +9,9 @@ return {
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
+      on_attach = function(bufnr)
+        require('user.remap').map_git_sign_keybindings(bufnr)
+      end
     },
   },
 }

@@ -81,7 +81,7 @@ vim.keymap.set('n', '<leader>/', function()
 end, { desc = '[/] Fuzzily search in current buffer' })
 
 --
-vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+vim.keymap.set('n', '<leader><leader>', builtin.git_status, { desc = '[ ] Find existing buffers' })
 
 -- LSP Keybinds (exports a function to be used in ../../after/plugin/lsp.lua b/c we need a reference to the current buffer) --
 M.map_lsp_keybinds = function(buffer_number)
@@ -137,6 +137,38 @@ vim.keymap.set('n', ']t', function()
 end)
 
 vim.keymap.set('n', 'to', vim.diagnostic.open_float)
+
+-- Git sign <leade> [H]unk
+--
+M.map_git_sign_keybindings = function(bufnr)
+    local gs = package.loaded.gitsigns
+
+    local function map(mode, l, r, opts)
+        opts = opts or {}
+        opts.buffer = bufnr
+        vim.keymap.set(mode, l, r, opts)
+    end
+
+    -- Navigation
+    map('n', ']h', function()
+        if vim.wo.diff then return ']h' end
+        vim.schedule(function() gs.next_hunk() end)
+        return '<Ignore>'
+    end, { expr = true })
+
+    map('n', '[h', function()
+        if vim.wo.diff then return '[h' end
+        vim.schedule(function() gs.prev_hunk() end)
+        return '<Ignore>'
+    end, { expr = true })
+
+    map('n', '<leader>hR', gs.reset_buffer)
+    map('n', '<leader>hp', gs.preview_hunk)
+
+    map('n', '<leader>hd', gs.diffthis)
+    map('n', '<leader>hD', function() gs.diffthis('~') end)
+end
+
 
 -- Fugitive
 M.map_fugitive_keybindings = function(bufnr)
