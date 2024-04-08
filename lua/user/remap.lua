@@ -190,21 +190,23 @@ vim.keymap.set('n', '<leader>d}', function()
     require('dap').down()
 end, { desc = '[D]ebug down without stepping' })
 
-vim.keymap.set('n', '<leader>ds', function()
+vim.keymap.set('n', '<leader>dS', function()
     require('dap').close()
     require('dapui').close()
 end, { desc = '[D]ebug [S]top' })
 
+vim.keymap.set('n', '<leader>dt', function()
+    require('dapui').toggle(2)
+end, { desc = '[D]ebug toggle [T]erminal' })
+
+vim.keymap.set('n', '<leader>ds', function()
+    require('dapui').float_element('scopes', { enter = true, height = 30 })
+end, { desc = '[D]ebug toggle [S]copes' })
+
 -- [T]ests
 
 vim.keymap.set('n', '<leader>t', function()
-    local breakpoints = require('dap.breakpoints').get()
-    local strategy
-    if not (next(breakpoints) == nil) then
-        strategy = 'dap'
-    end
-
-    require('neotest').run.run({ strategy = strategy })
+    require('neotest').run.run({ strategy = 'dap' })
 end, { desc = '[T]est' })
 
 vim.keymap.set('n', '<leader>T', function()

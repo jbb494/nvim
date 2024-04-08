@@ -31,12 +31,33 @@ return {
     "rcarriga/nvim-dap-ui",
     dependencies = {
       "mfussenegger/nvim-dap",
-      "nvim-neotest/nvim-nio"
+      "nvim-neotest/nvim-nio",
     },
     config = function()
       local dap, dapui = require("dap"), require("dapui")
 
-      dapui.setup()
+      dapui.setup({
+        controls = {
+          element = 'repl',
+          enabled = false
+        },
+        layouts = { {
+          elements = { {
+            id = "console",
+            size = 1
+          } },
+          position = "right",
+          size = 50
+        }, {
+          elements = { {
+            id = "repl",
+            size = 1,
+          } },
+          position = "bottom",
+          size = 10,
+        },
+        }
+      })
 
       dap.listeners.before.attach.dapui_config = function()
         dapui.open()
