@@ -1,6 +1,5 @@
 local M = {}
 
-
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 vim.keymap.set('n', '<C-d>', '<C-d>zz')
@@ -27,7 +26,7 @@ local harpoon = require('harpoon')
 
 -- [A]dd to Harpoon
 vim.keymap.set('n', '<leader>a', function()
-    harpoon:list():append()
+    harpoon:list():add()
 end, { desc = '[A]dd to Harpoon' })
 
 vim.keymap.set('n', '<C-e>', function()
@@ -140,7 +139,85 @@ end)
 
 vim.keymap.set('n', 'to', vim.diagnostic.open_float)
 
--- Git sign <leade> [H]unk
+
+--
+-- [B]reakpoint
+vim.keymap.set('n', '<leader>b', function()
+    require('dap').toggle_breakpoint()
+end, { desc = 'Toggle [B]reakpoint' })
+
+vim.keymap.set('n', '<leader>B', function()
+    require('dap').clear_breakpoints()
+end, { desc = 'Clear [B]reakpoints' })
+
+vim.keymap.set('n', '[b', function()
+    require('dap').list_breakpoints()
+    -- previous
+end, { desc = 'Previous [B]reakpoint' })
+
+vim.keymap.set('n', ']b', function()
+    require('dap').list_breakpoints()
+    -- next
+end, { desc = 'Next [B]reakpoint' })
+
+-- [D]ebug
+
+vim.keymap.set('n', '<leader>dc', function()
+    require('dap').continue()
+end, { desc = '[D]ebug [C]ontinue' })
+
+vim.keymap.set('n', '<leader>di', function()
+    require('dap').step_into()
+end, { desc = '[D]ebug step [I]nto' })
+
+vim.keymap.set('n', '<leader>do', function()
+    require('dap').step_over()
+end, { desc = '[D]ebug step [O]ver' })
+
+vim.keymap.set('n', '<leader>dO', function()
+    require('dap').step_out()
+end, { desc = '[D]ebug step [O]ut' })
+
+vim.keymap.set('n', '<leader>dj', function()
+    require('dap').run_to_cursor()
+end, { desc = '[D]ebug [J]ump to cursor' })
+
+vim.keymap.set('n', '<leader>d{', function()
+    require('dap').up()
+end, { desc = '[D]ebug up without stepping' })
+
+vim.keymap.set('n', '<leader>d}', function()
+    require('dap').down()
+end, { desc = '[D]ebug down without stepping' })
+
+vim.keymap.set('n', '<leader>ds', function()
+    require('dap').close()
+    require('dapui').close()
+end, { desc = '[D]ebug [S]top' })
+
+-- [T]ests
+
+vim.keymap.set('n', '<leader>t', function()
+    local breakpoints = require('dap.breakpoints').get()
+    local strategy
+    if not (next(breakpoints) == nil) then
+        strategy = 'dap'
+    end
+
+    require('neotest').run.run({ strategy = strategy })
+end, { desc = '[T]est' })
+
+vim.keymap.set('n', '<leader>T', function()
+    require('neotest').run.stop()
+end, { desc = 'Stop [T]est' })
+
+vim.keymap.set('n', '<leader>lt', function()
+    require('neotest').run.run_last()
+end, { desc = '[L]ast [T]est' })
+
+
+
+-- Git sign <leader> [H]unk
 --
 M.map_git_sign_keybindings = function(bufnr)
     local gs = package.loaded.gitsigns
