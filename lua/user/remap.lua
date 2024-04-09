@@ -124,21 +124,53 @@ vim.keymap.set('n', ']Q', '<CMD>clast<CR>', { silent = true })
 --
 -- [T]rouble
 vim.keymap.set('n', 'tt', function()
-    require('trouble').toggle()
+    require('trouble').toggle('diagnostics')
 end)
 
 vim.keymap.set('n', '[t', function()
-    require('trouble').open()
-    require('trouble').previous { skip_groups = true, jump = true }
+    require('trouble').open('diagnostics')
+    require('trouble').prev { skip_groups = true, jump = true }
 end)
 
 vim.keymap.set('n', ']t', function()
-    require('trouble').open()
+    require('trouble').open('diagnostics')
     require('trouble').next { skip_groups = true, jump = true }
 end)
 
 vim.keymap.set('n', 'to', vim.diagnostic.open_float)
 
+-- keys = {
+--   {
+--     "<leader>xx",
+--     "<cmd>Trouble diagnostics toggle<cr>",
+--     desc = "Diagnostics (Trouble)",
+--   },
+--   {
+--     "<leader>xX",
+--     "<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
+--     desc = "Buffer Diagnostics (Trouble)",
+--   },
+--   {
+--     "<leader>cs",
+--     "<cmd>Trouble symbols toggle focus=false<cr>",
+--     desc = "Symbols (Trouble)",
+--   },
+--   {
+--     "<leader>cl",
+--     "<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
+--     desc = "LSP Definitions / references / ... (Trouble)",
+--   },
+--   {
+--     "<leader>xL",
+--     "<cmd>Trouble loclist toggle<cr>",
+--     desc = "Location List (Trouble)",
+--   },
+--   {
+--     "<leader>xQ",
+--     "<cmd>Trouble qflist toggle<cr>",
+--     desc = "Quickfix List (Trouble)",
+--   },
+-- },
 
 --
 -- [B]reakpoint
@@ -190,10 +222,9 @@ vim.keymap.set('n', '<leader>d}', function()
     require('dap').down()
 end, { desc = '[D]ebug down without stepping' })
 
-vim.keymap.set('n', '<leader>dS', function()
-    require('dap').close()
-    require('dapui').close()
-end, { desc = '[D]ebug [S]top' })
+vim.keymap.set('n', '<leader>dT', function()
+    require('dap').terminate()
+end, { desc = '[D]ebug [T]erminate' })
 
 vim.keymap.set('n', '<leader>dt', function()
     require('dapui').toggle(2)
@@ -202,6 +233,10 @@ end, { desc = '[D]ebug toggle [T]erminal' })
 vim.keymap.set('n', '<leader>ds', function()
     require('dapui').float_element('scopes', { enter = true, height = 30 })
 end, { desc = '[D]ebug toggle [S]copes' })
+
+vim.keymap.set('n', '<leader>dk', function()
+    require('dapui').eval()
+end, { desc = '[D]ebug hover([K])' })
 
 -- [T]ests
 

@@ -37,10 +37,6 @@ return {
       local dap, dapui = require("dap"), require("dapui")
 
       dapui.setup({
-        controls = {
-          element = 'repl',
-          enabled = false
-        },
         layouts = { {
           elements = { {
             id = "console",
