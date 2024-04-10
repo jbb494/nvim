@@ -44,13 +44,6 @@ return {
           } },
           position = "right",
           size = 50
-        }, {
-          elements = { {
-            id = "repl",
-            size = 1,
-          } },
-          position = "bottom",
-          size = 10,
         },
         }
       })
@@ -67,6 +60,32 @@ return {
       dap.listeners.before.event_exited.dapui_config = function()
         dapui.close()
       end
+
+      -- local events = {
+      --   'event_breakpoint',
+      --   'event_capabilities',
+      --   'event_continued',
+      --   'event_exited',
+      --   'event_initialized',
+      --   'event_invalidated',
+      --   'event_loadedSource',
+      --   'event_memory',
+      --   'event_module',
+      --   'event_output',
+      --   'event_process',
+      --   'event_progressEnd',
+      --   'event_progressStart',
+      --   'event_progressUpdate',
+      --   'event_stopped',
+      --   'event_terminated',
+      --   'event_thread',
+      -- }
+      --
+      -- for key, value in pairs(events) do
+      --   dap.listeners.before[value].dapui_print = function()
+      --     print(value)
+      --   end
+      -- end
     end
   },
 }

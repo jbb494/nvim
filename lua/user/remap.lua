@@ -98,9 +98,6 @@ M.map_lsp_keybinds = function(buffer_number)
     vim.keymap.set('n', 'gI', require('telescope.builtin').lsp_implementations,
         { desc = '[G]oto [I]mplementation', buffer = buffer_number })
 
-    vim.keymap.set('n', 'gt', require('telescope.builtin').lsp_type_definitions,
-        { desc = '[Go] [T]ype', buffer = buffer_number })
-
     -- [S]earch [S]ymbols
     vim.keymap.set('n', '<leader>ss', require('telescope.builtin').lsp_document_symbols,
         { desc = '[S]earch [S]ymbols', buffer = buffer_number })
@@ -122,55 +119,22 @@ vim.keymap.set('n', '[Q', '<CMD>cfirst<CR>', { silent = true })
 vim.keymap.set('n', ']Q', '<CMD>clast<CR>', { silent = true })
 
 --
--- [T]rouble
-vim.keymap.set('n', 'tt', function()
-    require('trouble').toggle('diagnostics')
-end)
+-- [E]rrors
+vim.keymap.set('n', '<leader>od', function()
+    require('trouble').toggle({ mode = 'diagnostics' })
+end, { desc = '[O]pen [E]rrors' })
 
-vim.keymap.set('n', '[t', function()
-    require('trouble').open('diagnostics')
-    require('trouble').prev { skip_groups = true, jump = true }
-end)
+-- Doesnt seem to work prev
+-- vim.keymap.set('n', '[e', function()
+--     require('trouble').prev({ mode = 'diagnostics', jump = true })
+-- end, { desc = 'Previous [E]rror' })
 
-vim.keymap.set('n', ']t', function()
-    require('trouble').open('diagnostics')
-    require('trouble').next { skip_groups = true, jump = true }
-end)
+vim.keymap.set('n', ']e', function()
+    require('trouble').next({ mode = 'diagnostics', jump = true })
+end, { desc = 'Next [E]rror' })
 
-vim.keymap.set('n', 'to', vim.diagnostic.open_float)
+vim.keymap.set('n', '<leader>oe', vim.diagnostic.open_float, { desc = '[O]pen [E]rror' })
 
--- keys = {
---   {
---     "<leader>xx",
---     "<cmd>Trouble diagnostics toggle<cr>",
---     desc = "Diagnostics (Trouble)",
---   },
---   {
---     "<leader>xX",
---     "<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
---     desc = "Buffer Diagnostics (Trouble)",
---   },
---   {
---     "<leader>cs",
---     "<cmd>Trouble symbols toggle focus=false<cr>",
---     desc = "Symbols (Trouble)",
---   },
---   {
---     "<leader>cl",
---     "<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
---     desc = "LSP Definitions / references / ... (Trouble)",
---   },
---   {
---     "<leader>xL",
---     "<cmd>Trouble loclist toggle<cr>",
---     desc = "Location List (Trouble)",
---   },
---   {
---     "<leader>xQ",
---     "<cmd>Trouble qflist toggle<cr>",
---     desc = "Quickfix List (Trouble)",
---   },
--- },
 
 --
 -- [B]reakpoint
@@ -227,21 +191,27 @@ vim.keymap.set('n', '<leader>dT', function()
 end, { desc = '[D]ebug [T]erminate' })
 
 vim.keymap.set('n', '<leader>dt', function()
-    require('dapui').toggle(2)
+    require('dapui').toggle(1)
 end, { desc = '[D]ebug toggle [T]erminal' })
 
 vim.keymap.set('n', '<leader>ds', function()
     require('dapui').float_element('scopes', { enter = true, height = 30 })
 end, { desc = '[D]ebug toggle [S]copes' })
 
-vim.keymap.set('n', '<leader>dk', function()
+vim.keymap.set('', '<leader>dk', function()
     require('dapui').eval()
 end, { desc = '[D]ebug hover([K])' })
 
 -- [T]ests
 
 vim.keymap.set('n', '<leader>t', function()
-    require('neotest').run.run({ strategy = 'dap' })
+    local breakpoints = require('dap.breakpoints').get()
+    local strategy
+    if not (next(breakpoints) == nil) then
+        strategy = 'dap'
+    end
+
+    require('neotest').run.run({ strategy = strategy })
 end, { desc = '[T]est' })
 
 vim.keymap.set('n', '<leader>T', function()
@@ -252,6 +222,38 @@ vim.keymap.set('n', '<leader>lt', function()
     require('neotest').run.run_last()
 end, { desc = '[L]ast [T]est' })
 
+vim.keymap.set('n', '<leader>ot', function()
+    require('neotest').output.open({ enter = true })
+end, { desc = '[O]pen [T]est' })
+
+-- View diff [V]ersion history
+
+
+M.set_diff_file_history_keybindings = function()
+    vim.keymap.set('n', '<leader>v',
+        '<CMD>DiffviewFileHistory % --no-merges --imply-local<CR>',
+        { desc = 'File [V]ersion' }
+    )
+    vim.keymap.set('v', '<leader>v',
+        "<CMD>'<,'>DiffviewFileHistory --no-merges --imply-local<CR>",
+        { desc = 'Line [V]ersion' }
+    )
+end
+
+M.set_diff_file_history_after_open_keybindings = function()
+    vim.keymap.set('', '<leader>v',
+        "<CMD>DiffviewClose<CR>",
+        { desc = 'Close [V]ersion' }
+    )
+end
+
+vim.keymap.set('', '[v', function()
+    require("diffview.config").actions.select_prev_entry()
+end, { desc = 'Previous file/line [V]ersion' })
+
+vim.keymap.set('', ']v', function()
+    require("diffview.config").actions.select_next_entry()
+end, { desc = 'Next file/line [V]ersion' })
 
 
 -- Git sign <leader> [H]unk
@@ -284,7 +286,6 @@ M.map_git_sign_keybindings = function(bufnr)
     map('n', '<leader>hd', gs.diffthis)
     map('n', '<leader>hD', function() gs.diffthis('~') end)
 end
-
 
 -- Fugitive
 M.map_fugitive_keybindings = function(bufnr)
