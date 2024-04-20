@@ -204,13 +204,17 @@ end, { desc = '[D]ebug hover([K])' })
 
 -- [T]ests
 
-vim.keymap.set('n', '<leader>t', function()
+local getStrategyTest = function()
     local breakpoints = require('dap.breakpoints').get()
     local strategy
     if not (next(breakpoints) == nil) then
         strategy = 'dap'
     end
+    return strategy
+end
 
+vim.keymap.set('n', '<leader>t', function()
+    local strategy = getStrategyTest()
     require('neotest').run.run({ strategy = strategy })
 end, { desc = '[T]est' })
 
@@ -219,7 +223,8 @@ vim.keymap.set('n', '<leader>T', function()
 end, { desc = 'Stop [T]est' })
 
 vim.keymap.set('n', '<leader>lt', function()
-    require('neotest').run.run_last()
+    local strategy = getStrategyTest()
+    require('neotest').run.run_last({ strategy = strategy })
 end, { desc = '[L]ast [T]est' })
 
 vim.keymap.set('n', '<leader>ot', function()
@@ -227,7 +232,6 @@ vim.keymap.set('n', '<leader>ot', function()
 end, { desc = '[O]pen [T]est' })
 
 -- View diff [V]ersion history
-
 
 M.set_diff_file_history_keybindings = function()
     vim.keymap.set('n', '<leader>v',

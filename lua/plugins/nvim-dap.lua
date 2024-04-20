@@ -21,6 +21,7 @@ return {
           name = "Launch file",
           program = "${file}",
           cwd = "${workspaceFolder}",
+          stopOnEntry = true
         },
       }
 
