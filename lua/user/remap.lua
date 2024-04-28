@@ -125,9 +125,9 @@ vim.keymap.set('n', '<leader>od', function()
 end, { desc = '[O]pen [E]rrors' })
 
 -- Doesnt seem to work prev
--- vim.keymap.set('n', '[e', function()
---     require('trouble').prev({ mode = 'diagnostics', jump = true })
--- end, { desc = 'Previous [E]rror' })
+vim.keymap.set('n', '[e', function()
+    require('trouble').prev({ mode = 'diagnostics', jump = true })
+end, { desc = 'Previous [E]rror' })
 
 vim.keymap.set('n', ']e', function()
     require('trouble').next({ mode = 'diagnostics', jump = true })
@@ -161,6 +161,10 @@ end, { desc = 'Next [B]reakpoint' })
 vim.keymap.set('n', '<leader>dc', function()
     require('dap').continue()
 end, { desc = '[D]ebug [C]ontinue' })
+
+vim.keymap.set('n', '<leader>de', function()
+    require('dap').set_exception_breakpoints()
+end, { desc = '[D]ebug [E]xceptions' })
 
 vim.keymap.set('n', '<leader>di', function()
     require('dap').step_into()
@@ -284,11 +288,11 @@ M.map_git_sign_keybindings = function(bufnr)
         return '<Ignore>'
     end, { expr = true })
 
-    map('n', '<leader>hR', gs.reset_buffer)
-    map('n', '<leader>hp', gs.preview_hunk)
+    map('', '<leader>hr', gs.reset_hunk, { desc = "[H]unk [R]eset" })
+    map('n', '<leader>hp', gs.preview_hunk, { desc = "[H]unk [P]review" })
 
-    map('n', '<leader>hd', gs.diffthis)
-    map('n', '<leader>hD', function() gs.diffthis('~') end)
+    map('n', '<leader>hd', gs.diffthis, { desc = "[H]unk [D]iff" })
+    map('n', '<leader>hD', function() gs.diffthis('~') end, { desc = "[H]unk [D]iff with last commit" })
 end
 
 -- Fugitive
