@@ -245,10 +245,18 @@ M.set_diff_file_history_keybindings = function()
         "<CMD>'<,'>DiffviewFileHistory --no-merges --imply-local<CR>",
         { desc = 'Line [V]ersion' }
     )
+    vim.keymap.set('n', '<leader>V',
+        "<CMD>DiffviewOpen origin/main<CR>",
+        { desc = 'Branch re[V]ision' }
+    )
 end
 
 M.set_diff_file_history_after_open_keybindings = function()
     vim.keymap.set('', '<leader>v',
+        "<CMD>DiffviewClose<CR>",
+        { desc = 'Close [V]ersion' }
+    )
+    vim.keymap.set('', '<leader>V',
         "<CMD>DiffviewClose<CR>",
         { desc = 'Close [V]ersion' }
     )
