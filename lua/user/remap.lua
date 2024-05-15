@@ -47,11 +47,50 @@ end)
 
 -- Telescope
 -- [S]earch
+local function get_main_branch()
+    local branch = vim.fn.system("git branch -l master main")
+
+    if (vim.v.shell_error ~= 0) then
+        return nil
+    end
+
+    return branch:gsub("%s+$", "")
+end
+
+local function get_merge_base()
+    local branch = get_main_branch()
+    if (branch == nil) then
+        return nil
+    end
+
+    local merge_base = vim.fn.system("git merge-base HEAD " .. branch)
+
+    -- Check for errors in execution or empty output
+    if vim.v.shell_error ~= 0 then
+        return nil
+    else
+        return merge_base:gsub("%s+$", "")
+    end
+end
+
 local builtin = require 'telescope.builtin'
 
 vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
-vim.keymap.set('n', '<leader>sv', builtin.git_files, { desc = '[S]earch [V]ersion control' })
+vim.keymap.set('n', '<leader>sv',
+    function()
+        local mergeBase = get_merge_base()
+
+        if (mergeBase == nil) then
+            return
+        end
+
+        builtin.git_files {
+            git_command = { "git", "diff", "--name-only", mergeBase }
+        }
+    end,
+    { desc = '[S]earch [V]ersion control' })
+
 vim.keymap.set('n', '<leader>sw', function()
     local word = vim.fn.expand '<cword>'
     builtin.grep_string { search = word }
