@@ -9,6 +9,8 @@ vim.keymap.set('n', '<C-i>', '<C-i>zz')
 
 vim.keymap.set('n', '<leader>e', '<CMD>Oil<CR>')
 
+vim.keymap.set('n', '<leader>x', '<CMD>source %<CR>')
+
 vim.keymap.set('v', 'J', ":m '>+1<CR>gv=gv")
 vim.keymap.set('v', 'K', ":m '<-2<CR>gv=gv")
 
@@ -47,49 +49,12 @@ end)
 
 -- Telescope
 -- [S]earch
-local function get_main_branch()
-    local branch = vim.fn.system("git branch -l master main")
-
-    if (vim.v.shell_error ~= 0) then
-        return nil
-    end
-
-    return branch:gsub("%s+$", "")
-end
-
-local function get_merge_base()
-    local branch = get_main_branch()
-    if (branch == nil) then
-        return nil
-    end
-
-    local merge_base = vim.fn.system("git merge-base HEAD " .. branch)
-
-    -- Check for errors in execution or empty output
-    if vim.v.shell_error ~= 0 then
-        return nil
-    else
-        return merge_base:gsub("%s+$", "")
-    end
-end
-
 local builtin = require 'telescope.builtin'
+local custom = require 'user.telescope.git'
 
 vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
-vim.keymap.set('n', '<leader>sv',
-    function()
-        local mergeBase = get_merge_base()
-
-        if (mergeBase == nil) then
-            return
-        end
-
-        builtin.git_files {
-            git_command = { "git", "diff", "--name-only", mergeBase }
-        }
-    end,
-    { desc = '[S]earch [V]ersion control' })
+vim.keymap.set('n', '<leader>sv', custom.version_merge_base, { desc = '[S]earch [V]ersion control' })
 
 vim.keymap.set('n', '<leader>sw', function()
     local word = vim.fn.expand '<cword>'
