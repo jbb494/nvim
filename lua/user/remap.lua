@@ -15,6 +15,7 @@ vim.keymap.set('v', 'J', ":m '>+1<CR>gv=gv")
 vim.keymap.set('v', 'K', ":m '<-2<CR>gv=gv")
 
 vim.keymap.set("x", "<leader>p", [["_dP]])
+vim.keymap.set("n", "<leader>q", "<CMD>tabclose<CR>")
 
 vim.keymap.set('n', 'Q', '<nop>')
 
@@ -239,40 +240,7 @@ vim.keymap.set('n', '<leader>ot', function()
 end, { desc = '[O]pen [T]est' })
 
 -- View diff [V]ersion history
-
-M.set_diff_file_history_keybindings = function()
-    vim.keymap.set('n', '<leader>v',
-        '<CMD>DiffviewFileHistory % --no-merges --imply-local<CR>',
-        { desc = 'File [V]ersion' }
-    )
-    vim.keymap.set('v', '<leader>v',
-        "<CMD>'<,'>DiffviewFileHistory --no-merges --imply-local<CR>",
-        { desc = 'Line [V]ersion' }
-    )
-    vim.keymap.set('n', '<leader>V',
-        "<CMD>DiffviewOpen origin/main<CR>",
-        { desc = 'Branch re[V]ision' }
-    )
-end
-
-M.set_diff_file_history_after_open_keybindings = function()
-    vim.keymap.set('', '<leader>v',
-        "<CMD>DiffviewClose<CR>",
-        { desc = 'Close [V]ersion' }
-    )
-    vim.keymap.set('', '<leader>V',
-        "<CMD>DiffviewClose<CR>",
-        { desc = 'Close [V]ersion' }
-    )
-end
-
-vim.keymap.set('', '[v', function()
-    require("diffview.config").actions.select_prev_entry()
-end, { desc = 'Previous file/line [V]ersion' })
-
-vim.keymap.set('', ']v', function()
-    require("diffview.config").actions.select_next_entry()
-end, { desc = 'Next file/line [V]ersion' })
+-- Its on the file. Probably better to not have this huge remap file?
 
 
 -- Git sign <leader> [H]unk
