@@ -5,17 +5,24 @@ return {
       local actions = require('diffview.config').actions
 
       local openDiffViewCommand = function()
-        vim.cmd('DiffviewFileHistory % --no-merges --imply-local')
-      end
-
-      local openDiffFileHistoryCommand = function()
         vim.cmd('DiffviewOpen origin/main')
       end
+      local openDiffFileHistoryCommand = function()
+        vim.cmd('DiffviewFileHistory % --no-merges --imply-local')
+      end
+      local openDiffLineHistoryCommand = function()
+        vim.cmd("'<,'>DiffviewFileHistory --no-merges --imply-local")
+      end
 
-      vim.keymap.set({ 'n', 'v' }, '<leader>v',
+      vim.keymap.set('n', '<leader>v',
         openDiffFileHistoryCommand,
-        { desc = 'File [V]ersion' }
+        { desc = 'File re[V]ision' }
       )
+      vim.keymap.set('v', '<leader>v',
+        openDiffLineHistoryCommand,
+        { desc = 'Line re[V]ision' }
+      )
+
       vim.keymap.set('n', '<leader>V',
         openDiffViewCommand,
         { desc = 'Branch re[V]ision' }
@@ -30,13 +37,20 @@ return {
         },
         keymaps = {
           view = {
-            { { 'n',                   'v' }, '<leader>v', function()
-              actions.close()
-              openDiffViewCommand()
-            end, { desc = 'File re[V]ision' } },
-            { { 'n',                     'v' }, '<leader>V', function()
-              actions.close()
+            { 'n', '<leader>v', function()
+              -- We should here get the real file name from diffview, since nvim is a tmp file
               openDiffFileHistoryCommand()
+            end, { desc = 'File re[V]ision' } },
+
+            { 'v', '<leader>v', function()
+              -- We should here get the real file name from diffview, since nvim is a tmp file
+              -- If we don't, we get an error when trying to file history from the diffview panel.
+              -- Maybe checkout (go to file history, from diff view, action exists in diffview)
+              openDiffLineHistoryCommand()
+            end, { desc = 'Line re[V]ision' } },
+
+            { 'n', '<leader>V', function()
+              openDiffViewCommand()
             end, { desc = 'Branch re[V]ision' } },
             { 'n', 'gf',        actions.goto_file_edit,    { desc = '[G]o to [F]ile' } },
             { 'n', ']v',        actions.select_next_entry, { desc = 'Next file/line [V]ersion' } },
