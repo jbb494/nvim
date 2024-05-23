@@ -52,7 +52,10 @@ return {
             { 'n', '<leader>V', function()
               openDiffViewCommand()
             end, { desc = 'Branch re[V]ision' } },
-            { 'n', 'gf',        actions.goto_file_edit,    { desc = '[G]o to [F]ile' } },
+            { 'n', 'gf', function()
+              actions.goto_file_edit()
+              vim.cmd('tabclose #')
+            end, { desc = '[G]o to [F]ile' } },
             { 'n', ']v',        actions.select_next_entry, { desc = 'Next file/line [V]ersion' } },
             { 'n', '[v',        actions.select_prev_entry, { desc = 'Previous file/line [V]ersion' } },
             { 'n', '<leader>b', actions.focus_files,       { desc = 'Focus files' } },
