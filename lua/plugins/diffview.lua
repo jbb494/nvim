@@ -7,6 +7,9 @@ return {
       local openDiffViewCommand = function()
         vim.cmd('DiffviewOpen origin/main')
       end
+      local openDiffViewCommandHead = function()
+        vim.cmd('DiffviewOpen HEAD')
+      end
       local openDiffFileHistoryCommand = function()
         vim.cmd('DiffviewFileHistory % --no-merges --imply-local')
       end
@@ -14,18 +17,23 @@ return {
         vim.cmd("'<,'>DiffviewFileHistory --no-merges --imply-local")
       end
 
-      vim.keymap.set('n', '<leader>v',
+      vim.keymap.set('n', '<leader>vp',
         openDiffFileHistoryCommand,
-        { desc = 'File re[V]ision' }
+        { desc = '[V]ersion history [P]ath' }
       )
-      vim.keymap.set('v', '<leader>v',
+      vim.keymap.set('v', '<leader>vp',
         openDiffLineHistoryCommand,
-        { desc = 'Line re[V]ision' }
+        { desc = '[V]ersion history [P]ath and line' }
+      )
+
+      vim.keymap.set('n', '<leader>vh',
+        openDiffViewCommandHead,
+        { desc = '[V]ersion [H]ead' }
       )
 
       vim.keymap.set('n', '<leader>V',
         openDiffViewCommand,
-        { desc = 'Branch re[V]ision' }
+        { desc = '[V]ersion branch' }
       )
 
       require('diffview').setup({
@@ -37,21 +45,21 @@ return {
         },
         keymaps = {
           view = {
-            { 'n', '<leader>v', function()
+            { 'n', '<leader>vf', function()
               -- We should here get the real file name from diffview, since nvim is a tmp file
               openDiffFileHistoryCommand()
-            end, { desc = 'File re[V]ision' } },
+            end, { desc = '[V]ersion history [P]ath' } },
 
-            { 'v', '<leader>v', function()
+            { 'v', '<leader>vf', function()
               -- We should here get the real file name from diffview, since nvim is a tmp file
               -- If we don't, we get an error when trying to file history from the diffview panel.
               -- Maybe checkout (go to file history, from diff view, action exists in diffview)
               openDiffLineHistoryCommand()
-            end, { desc = 'Line re[V]ision' } },
+            end, { desc = '[V]ersion history [P]ath and line' } },
 
             { 'n', '<leader>V', function()
               openDiffViewCommand()
-            end, { desc = 'Branch re[V]ision' } },
+            end, { desc = '[V]ersion branch' } },
             { 'n', 'gf', function()
               actions.goto_file_edit()
               vim.cmd('tabclose #')
