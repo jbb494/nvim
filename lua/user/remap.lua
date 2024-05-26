@@ -55,7 +55,8 @@ local custom = require 'user.telescope.git'
 
 vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
-vim.keymap.set('n', '<leader>sv', custom.version_merge_base, { desc = '[S]earch [V]ersion control' })
+vim.keymap.set('n', '<leader>sv', function() custom.version_merge_base { commit = 'origin/main' } end,
+    { desc = '[S]earch [V]ersion control' })
 
 vim.keymap.set('n', '<leader>sw', function()
     local word = vim.fn.expand '<cword>'

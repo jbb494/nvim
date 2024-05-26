@@ -2,16 +2,14 @@ local finders = require "telescope.finders"
 local make_entry = require "telescope.make_entry"
 local pickers = require "telescope.pickers"
 local utils = require "telescope.utils"
-local action_state = require "telescope.actions.state"
-local actions = require "telescope.actions"
 
 local custom_previewers = require "user.telescope.previewers.buffer_previewers"
 local conf = require("telescope.config").values
 
 local git = {}
 
-local gen_origin_main_finder = function(opts)
-    local git_cmd = { "git", "diff", "--name-status", "origin/main" }
+local gen_main_finder = function(opts)
+    local git_cmd = { "git", "diff", "--name-status", opts.commit }
 
     local output = utils.get_os_command_output(git_cmd, opts.cwd)
 
@@ -48,37 +46,18 @@ git.version_merge_base = function(opts)
         return
     end
 
-    local initial_finder = gen_origin_main_finder(opts)
+    local initial_finder = gen_main_finder(opts)
     if not initial_finder then
         return
     end
 
     pickers
         .new(opts, {
-            prompt_title = "Git origin main",
+            prompt_title = "Git " .. opts.commit,
             finder = initial_finder,
             previewer = custom_previewers.git_file_diff_origin_main.new(opts),
             sorter = conf.file_sorter(opts),
-            attach_mappings = function(prompt_bufnr, map)
-                local view = require('diffview.lib').get_current_view()
-
-                if (view ~= nil) then
-                    actions.select_default:replace(function()
-                        actions.close(prompt_bufnr)
-                        local entry = action_state.get_selected_entry()
-                        if not entry then
-                            utils.notify("actions.set.edit", {
-                                msg = "Nothing currently selected",
-                                level = "WARN",
-                            })
-                            return
-                        end
-
-                        view:set_file_by_path(entry.value)
-                    end)
-                end
-                return true
-            end,
+            attach_mappings = opts.attach_mappings,
         })
         :find()
 end
