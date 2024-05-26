@@ -20,6 +20,29 @@ return {
         ["gx"] = "actions.open_external",
         ["g."] = "actions.toggle_hidden",
         ["g\\"] = "actions.toggle_trash",
+        ["<leader>sf"] = function()
+          local util = require("oil.util")
+
+          local current_buffer = vim.api.nvim_get_current_buf()
+          local title = vim.api.nvim_buf_get_name(current_buffer)
+          local _scheme, path = util.parse_url(title)
+
+          print(path)
+          local builtin = require 'telescope.builtin'
+          builtin.find_files { cwd = path, hidden = true }
+        end,
+        ["<leader>sg"] = function()
+          local util = require("oil.util")
+
+          local current_buffer = vim.api.nvim_get_current_buf()
+          local title = vim.api.nvim_buf_get_name(current_buffer)
+          local _scheme, path = util.parse_url(title)
+
+          print(path)
+          local builtin = require 'telescope.builtin'
+          builtin.live_grep { cwd = path }
+        end
+
       },
 
       view_options = {

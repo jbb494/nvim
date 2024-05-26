@@ -52,12 +52,19 @@ end)
 -- [S]earch
 local builtin = require 'telescope.builtin'
 local custom = require 'user.telescope.git'
+local utils = require 'user.utils'
 
 vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sv', function() custom.version_merge_base { commit = 'origin/main' } end,
     { desc = '[S]earch [V]ersion control' })
 
+vim.keymap.set('v', '<leader>sw', function()
+    local visual_selection = utils.get_visual_selection()
+    vim.print(visual_selection)
+
+    builtin.grep_string { search = visual_selection }
+end)
 vim.keymap.set('n', '<leader>sw', function()
     local word = vim.fn.expand '<cword>'
     builtin.grep_string { search = word }
