@@ -138,14 +138,17 @@ end, { desc = '[O]pen [E]rrors' })
 
 -- Doesnt seem to work prev
 vim.keymap.set('n', '[e', function()
-    require('trouble').prev({ mode = 'diagnostics', jump = true })
+    vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.ERROR })
 end, { desc = 'Previous [E]rror' })
 
 vim.keymap.set('n', ']e', function()
-    require('trouble').next({ mode = 'diagnostics', jump = true })
+    vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.ERROR })
 end, { desc = 'Next [E]rror' })
 
-vim.keymap.set('n', '<leader>oe', vim.diagnostic.open_float, { desc = '[O]pen [E]rror' })
+vim.keymap.set('n', '<leader>oe', function()
+    vim.diagnostic.open_float()
+    vim.diagnostic.open_float()
+end, { desc = '[O]pen [E]rror' })
 
 
 --
@@ -263,17 +266,29 @@ M.map_git_sign_keybindings = function(bufnr)
     end
 
     -- Navigation
-    map('n', ']h', function()
-        if vim.wo.diff then return ']h' end
-        vim.schedule(function() gs.next_hunk() end)
+    map('n', ']c', function()
+        if vim.wo.diff then return ']c' end
+        vim.schedule(function() gs.nav_hunk('next') end)
         return '<Ignore>'
-    end, { expr = true })
+    end, { expr = true, desc = "Next [C]ange" })
 
-    map('n', '[h', function()
-        if vim.wo.diff then return '[h' end
-        vim.schedule(function() gs.prev_hunk() end)
+    map('n', '[c', function()
+        if vim.wo.diff then return '[c' end
+        vim.schedule(function() gs.nav_hunk('prev') end)
         return '<Ignore>'
-    end, { expr = true })
+    end, { expr = true, desc = "Previous [C]ange" })
+
+    map('n', ']C', function()
+        if vim.wo.diff then return 'G[c' end
+        vim.schedule(function() gs.nav_hunk('last') end)
+        return '<Ignore>'
+    end, { expr = true, desc = "Last [C]ange" })
+
+    map('n', '[C', function()
+        if vim.wo.diff then return 'gg]c' end
+        vim.schedule(function() gs.nav_hunk('first') end)
+        return '<Ignore>'
+    end, { expr = true, desc = "First [C]ange" })
 
     map('', '<leader>hr', gs.reset_hunk, { desc = "[H]unk [R]eset" })
     map('n', '<leader>hp', gs.preview_hunk, { desc = "[H]unk [P]review" })

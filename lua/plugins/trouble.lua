@@ -2,6 +2,8 @@ return {
   {
     "folke/trouble.nvim",
     branch = "dev",
-    opts = {},
+    opts = {
+      win = { type = "split", position = 'right' }
+    },
   }
 }
