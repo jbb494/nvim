@@ -27,9 +27,8 @@ return {
           local title = vim.api.nvim_buf_get_name(current_buffer)
           local _scheme, path = util.parse_url(title)
 
-          print(path)
-          local builtin = require 'telescope.builtin'
-          builtin.find_files { cwd = path, hidden = true }
+          local custom_telescope = require 'user.telescope.files'
+          custom_telescope.find_files { cwd = path }
         end,
         ["<leader>sg"] = function()
           local util = require("oil.util")
@@ -38,7 +37,6 @@ return {
           local title = vim.api.nvim_buf_get_name(current_buffer)
           local _scheme, path = util.parse_url(title)
 
-          print(path)
           local builtin = require 'telescope.builtin'
           builtin.live_grep { cwd = path }
         end

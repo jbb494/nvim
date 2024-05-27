@@ -68,7 +68,7 @@ return {
             { 'n', ']v',        actions.select_next_entry, { desc = 'Next file/line [V]ersion' } },
             { 'n', '[v',        actions.select_prev_entry, { desc = 'Previous file/line [V]ersion' } },
             { 'n', '<leader>b', actions.focus_files,       { desc = 'Focus files' } },
-            { 'n', '<leader>sv', function()
+            { 'n', '<leader>vf', function()
               local telescope_action_state = require "telescope.actions.state"
               local telescope_actions = require "telescope.actions"
               local telescope_utils = require "telescope.utils"
@@ -96,7 +96,36 @@ return {
               end
 
               custom.version_merge_base { commit = commit, attach_mappings = attach_mappings }
-            end, { desc = '[S]earch [V]ersion control' } },
+            end, { desc = '[V]ersion search [F]iles' } },
+            { 'n', '<leader>vg', function()
+              local telescope_action_state = require "telescope.actions.state"
+              local telescope_actions = require "telescope.actions"
+              local telescope_utils = require "telescope.utils"
+              local lib = require('diffview.lib')
+              local view = lib.get_current_view()
+
+              local commit = view.rev_arg
+
+              local attach_mappings = function(prompt_bufnr)
+                telescope_actions.select_default:replace(function()
+                  telescope_actions.close(prompt_bufnr)
+                  local entry = telescope_action_state.get_selected_entry()
+                  if not entry then
+                    telescope_utils.notify("actions.set.edit", {
+                      msg = "Nothing currently selected",
+                      level = "WARN",
+                    })
+                    return
+                  end
+
+                  view:set_file_by_path(entry.value)
+                end)
+
+                return true
+              end
+
+              custom.version_merge_base { commit = commit, attach_mappings = attach_mappings }
+            end, { desc = '[V]ersion search [F]iles' } },
           },
           file_panel = {
             { 'n', '<leader>b', actions.focus_entry, { desc = 'Focus entry' } },

@@ -53,9 +53,13 @@ end)
 local builtin = require 'telescope.builtin'
 local custom = require 'user.telescope.git'
 local utils = require 'user.utils'
+local custom_telescope = require 'user.telescope.files'
 
 vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
-vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+vim.keymap.set('n', '<leader>sf', function()
+        custom_telescope.find_files()
+    end,
+    { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sv', function() custom.version_merge_base { commit = 'origin/main' } end,
     { desc = '[S]earch [V]ersion control' })
 
