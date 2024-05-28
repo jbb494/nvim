@@ -60,8 +60,8 @@ vim.keymap.set('n', '<leader>sf', function()
         custom_telescope.find_files()
     end,
     { desc = '[S]earch [F]iles' })
-vim.keymap.set('n', '<leader>sv', function() custom.version_merge_base { commit = 'origin/main' } end,
-    { desc = '[S]earch [V]ersion control' })
+vim.keymap.set('n', '<leader>vf', function() custom.version_merge_base { commit = 'origin/main' } end,
+    { desc = '[V]ersion search [F]iles' })
 
 vim.keymap.set('v', '<leader>sw', function()
     local visual_selection = utils.get_visual_selection()

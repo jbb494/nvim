@@ -45,6 +45,7 @@ return {
           end,
         },
         keymaps = {
+          disable_defaults = true,
           view = {
             { 'n', '<leader>vp', function()
               -- We should here get the real file name from diffview, since nvim is a tmp file
@@ -126,6 +127,15 @@ return {
 
               custom.version_merge_base { commit = commit, attach_mappings = attach_mappings }
             end, { desc = '[V]ersion search [F]iles' } },
+            { "n", "<leader>ko", actions.conflict_choose("ours"),       { desc = "Choose the OURS version of a [K]onflict" } },
+            { "n", "<leader>kt", actions.conflict_choose("theirs"),     { desc = "Choose the THEIRS version of a [K]onflict" } },
+            { "n", "<leader>kb", actions.conflict_choose("base"),       { desc = "Choose the BASE version of a [K]onflict" } },
+            { "n", "<leader>ka", actions.conflict_choose("all"),        { desc = "Choose all the versions of a [K]onflict" } },
+            { "n", "dx",         actions.conflict_choose("none"),       { desc = "Delete the [K]onflict region" } },
+            { "n", "<leader>kO", actions.conflict_choose_all("ours"),   { desc = "Choose the OURS version of a [K]onflict for the whole file" } },
+            { "n", "<leader>kT", actions.conflict_choose_all("theirs"), { desc = "Choose the THEIRS version of a [K]onflict for the whole file" } },
+            { "n", "<leader>kB", actions.conflict_choose_all("base"),   { desc = "Choose the BASE version of a [K]onflict for the whole file" } },
+            { "n", "<leader>kA", actions.conflict_choose_all("all"),    { desc = "Choose all the versions of a [K]onflict for the whole file" } },
           },
           file_panel = {
             { 'n', '<leader>b', actions.focus_entry, { desc = 'Focus entry' } },
