@@ -19,6 +19,8 @@ return {
       { 'nvim-tree/nvim-web-devicons' },
     },
     config = function()
+      local Path = require "plenary.path"
+
       vim.api.nvim_create_autocmd("FileType", {
         pattern = "TelescopeResults",
         callback = function(ctx)
@@ -29,10 +31,14 @@ return {
         end,
       })
 
-      local function filenameFirst(_, path)
-        local tail = vim.fs.basename(path)
-        local parent = vim.fs.dirname(path)
+      local function filenameFirst(opts, path)
+        local final_path = Path:new(path):make_relative(opts.cwd)
+
+        local tail = vim.fs.basename(final_path)
+        local parent = vim.fs.dirname(final_path)
         if parent == "." then return tail end
+
+
         return string.format("%s\t\t%s", tail, parent)
       end
 

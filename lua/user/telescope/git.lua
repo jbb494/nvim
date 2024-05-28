@@ -47,9 +47,6 @@ git.version_merge_base = function(opts)
     end
 
     local initial_finder = gen_main_finder(opts)
-    if not initial_finder then
-        return
-    end
 
     pickers
         .new(opts, {
