@@ -13,6 +13,8 @@ return { {
 
     require('fidget').setup {}
     require('mason').setup()
+    local lspconfig = require('lspconfig')
+
     require('mason-lspconfig').setup {
       ensure_installed = {
         'lua_ls',
@@ -21,13 +23,32 @@ return { {
       },
       handlers = {
         function(server_name) -- default handler (optional)
-          require('lspconfig')[server_name].setup {
+          lspconfig[server_name].setup {
             capabilities = capabilities,
           }
         end,
+        ['volar'] = function()
+          local function get_typescript_server_path(root_dir)
+            local util = require 'lspconfig.util'
 
+            local project_root = util.find_node_modules_ancestor(root_dir)
+            return project_root and (util.path.join(project_root, 'node_modules', 'typescript', 'lib')) or ''
+          end
+
+          lspconfig.volar.setup {
+            capabilities = capabilities,
+            filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue', 'json' },
+            init_options = {
+              vue = {
+                hybridMode = false,
+              },
+              typescript = {
+                tsdk = get_typescript_server_path(vim.fn.getcwd()),
+              },
+            }
+          }
+        end,
         ['lua_ls'] = function()
-          local lspconfig = require 'lspconfig'
           lspconfig.lua_ls.setup {
             capabilities = capabilities,
             settings = {
