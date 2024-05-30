@@ -66,6 +66,9 @@ vim.keymap.set('n', '<leader>vf', function() custom.version_merge_base { commit 
 vim.keymap.set('v', '<leader>sw', function()
     local visual_selection = utils.get_visual_selection()
     vim.print(visual_selection)
+    if (visual_selection == '') then
+        return
+    end
 
     builtin.grep_string { search = visual_selection }
 end)

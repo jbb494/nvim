@@ -20,10 +20,17 @@ return { {
         'lua_ls',
         'rust_analyzer',
         'tsserver',
+        'volar',
+        'eslint'
       },
       handlers = {
         function(server_name) -- default handler (optional)
           lspconfig[server_name].setup {
+            capabilities = capabilities,
+          }
+        end,
+        ['eslint'] = function()
+          lspconfig['eslint'].setup {
             capabilities = capabilities,
           }
         end,
@@ -37,7 +44,7 @@ return { {
 
           lspconfig.volar.setup {
             capabilities = capabilities,
-            filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue', 'json' },
+            filetypes = { 'vue' },
             init_options = {
               vue = {
                 hybridMode = false,

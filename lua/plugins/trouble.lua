@@ -3,7 +3,7 @@ return {
     "folke/trouble.nvim",
     branch = "dev",
     opts = {
-      win = { type = "split", position = 'right' }
+      win = { type = "split", position = 'right', size = 100 }
     },
   }
 }
