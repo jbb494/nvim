@@ -71,3 +71,4 @@ vim.opt.scrolloff = 8
 
 vim.g.netrw_browse_split = 0
 vim.g.netrw_banner = 0
+vim.opt.hlsearch = false
