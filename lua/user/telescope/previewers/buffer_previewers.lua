@@ -49,7 +49,7 @@ M.git_file_diff_origin_main = defaulter(function(opts)
                     file_encoding = opts.file_encoding,
                 })
             else
-                putils.job_maker({ "git", "--no-pager", "diff", "origin/main", "--", entry.value }, self.state.bufnr, {
+                putils.job_maker({ "git", "--no-pager", "diff", opts.commit, "--", entry.value }, self.state.bufnr, {
                     value = entry.value,
                     bufname = self.state.bufname,
                     cwd = opts.cwd,
