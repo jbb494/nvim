@@ -62,6 +62,9 @@ return {
             { 'n', '<leader>V', function()
               openDiffViewCommand()
             end, { desc = '[V]ersion branch' } },
+            { 'n', 'gF', function()
+              actions.goto_file_edit()
+            end, { desc = '[G]o to [F]ile' } },
             { 'n', 'gf', function()
               actions.goto_file_edit()
               vim.cmd('tabclose #')
