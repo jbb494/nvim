@@ -21,7 +21,7 @@ return { {
         'rust_analyzer',
         'tsserver',
         'volar',
-        'eslint'
+        'eslint@4.8.0'
       },
       handlers = {
         function(server_name) -- default handler (optional)
