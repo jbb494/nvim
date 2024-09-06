@@ -300,6 +300,16 @@ M.map_git_sign_keybindings = function(bufnr)
     map('', '<leader>hr', gs.reset_hunk, { desc = "[H]unk [R]eset" })
     map('n', '<leader>hp', gs.preview_hunk, { desc = "[H]unk [P]review" })
 
+    map('n', '<leader>hs', gs.stage_hunk, { desc = "[H]unk [S]tage" })
+    map('v', '<leader>hs', function()
+        local raw_start = vim.fn.getpos("v")[2]
+        local raw_end = vim.fn.getpos(".")[2]
+
+        gs.stage_hunk({ raw_start, raw_end })
+    end, { desc = "[H]unk [S]tage" })
+
+    map('n', '<leader>hu', gs.undo_stage_hunk, { desc = "[H]unk [U]ndo" })
+
     map('n', '<leader>hd', gs.diffthis, { desc = "[H]unk [D]iff" })
     map('n', '<leader>hD', function() gs.diffthis('~') end, { desc = "[H]unk [D]iff with last commit" })
 end

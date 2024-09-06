@@ -16,7 +16,6 @@ local function getPositionsSorted(positions)
     end)
 end
 
--- We have a problem here, that when the cursor is on the left it doesnt work.
 M.get_visual_selection = function()
     local raw_start = vim.fn.getpos("v")
     local raw_end = vim.fn.getpos(".")
