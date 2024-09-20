@@ -20,6 +20,7 @@ return {
           request = "launch",
           name = "Launch file",
           program = "${file}",
+          console = 'integratedTerminal',
           cwd = "${workspaceFolder}",
           stopOnEntry = true
         },
