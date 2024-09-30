@@ -30,7 +30,7 @@ vim.opt.splitbelow = true
 vim.opt.splitright = true
 
 -- Enable mouse mode
-vim.opt.mouse = {}
+vim.opt.mouse = 'a'
 
 -- Enable ignorecase + smartcase for better searching
 vim.opt.ignorecase = true

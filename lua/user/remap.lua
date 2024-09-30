@@ -48,6 +48,10 @@ vim.keymap.set('n', '<C-s>', function()
     harpoon:list():select(4)
 end)
 
+-- Disable mouse clicks
+-- vim.keymap.set('n', '<LeftMouse>', '<nop>')
+vim.keymap.set('n', '<RightMouse>', '<nop>')
+
 -- Telescope
 -- [S]earch
 local builtin = require 'telescope.builtin'
