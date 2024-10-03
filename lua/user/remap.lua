@@ -302,6 +302,7 @@ M.map_git_sign_keybindings = function(bufnr)
     end, { expr = true, desc = "First [C]ange" })
 
     map('', '<leader>hr', gs.reset_hunk, { desc = "[H]unk [R]eset" })
+    map('', '<leader>hR', gs.reset_buffer, { desc = "[H]unk [R]eset" })
     map('n', '<leader>hp', gs.preview_hunk, { desc = "[H]unk [P]review" })
 
     map('n', '<leader>hs', gs.stage_hunk, { desc = "[H]unk [S]tage" })
