@@ -6,7 +6,7 @@ return {
       local custom = require 'user.telescope.git'
 
       local openDiffViewCommand = function()
-        vim.cmd('DiffviewOpen origin/main')
+        vim.cmd('DiffviewOpen origin/main...HEAD')
       end
       local openDiffViewCommandHead = function()
         vim.cmd('DiffviewOpen HEAD')
@@ -141,10 +141,10 @@ return {
             { "n", "<leader>kA", actions.conflict_choose_all("all"),    { desc = "Choose all the versions of a [K]onflict for the whole file" } },
           },
           file_panel = {
-            { 'n', '<leader>b', actions.focus_entry, { desc = 'Focus entry' } },
+            { 'n', '<cr>', actions.focus_entry, { desc = 'Focus entry' } },
           },
           file_history_panel = {
-            { 'n', '<leader>b', actions.focus_entry, { desc = 'Focus entry' } },
+            { 'n', '<cr>', actions.focus_entry, { desc = 'Focus entry' } },
           }
         }
       })
