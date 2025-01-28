@@ -9,7 +9,7 @@ local conf = require("telescope.config").values
 local git = {}
 
 local gen_main_finder = function(opts)
-    local git_cmd = { "git", "diff", "--name-status", opts.commit .. "...HEAD" }
+    local git_cmd = { "git", "diff", "--name-status", opts.commit }
 
     local output = utils.get_os_command_output(git_cmd, opts.cwd)
 
