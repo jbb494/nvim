@@ -29,6 +29,32 @@ return { {
             capabilities = capabilities,
           }
         end,
+        ['tsserver'] = function()
+          lspconfig.tsserver.setup {
+            capabilities = capabilities,
+            root_dir = function(fname)
+              local util = require("lspconfig.util")
+              return util.root_pattern(".git")(fname)
+                  or util.root_pattern("package.json", "tsconfig.json", "jsconfig.json")(fname)
+            end,
+            -- Important for monorepos - make sure tsserver can see the whole project
+            init_options = {
+              disableAutomaticTypingAcquisition = false,
+              -- This setting is important for monorepos
+              maxTsServerMemory = 8192,
+              -- Enable project-wide refactoring
+              preferences = {
+                includePackageJsonAutoImports = "on",
+              }
+            },
+            -- For monorepos, you might need to set this to get full project awareness
+            -- Make sure to always work from the root
+            cmd = { "typescript-language-server", "--stdio" },
+            flags = {
+              debounce_text_changes = 150,
+            }
+          }
+        end,
         ['eslint'] = function()
           lspconfig['eslint'].setup {
             capabilities = capabilities,
