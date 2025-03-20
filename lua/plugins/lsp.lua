@@ -19,7 +19,6 @@ return { {
       ensure_installed = {
         'lua_ls',
         'rust_analyzer',
-        'tsserver',
         'volar',
         'eslint@4.8.0'
       },
