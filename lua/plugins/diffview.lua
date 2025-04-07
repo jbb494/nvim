@@ -6,7 +6,7 @@ return {
       local custom = require 'user.telescope.git'
 
       local openDiffViewCommand = function()
-        vim.cmd('DiffviewOpen origin/main...HEAD')
+        vim.cmd('DiffviewOpen origin/main')
       end
       local openDiffViewCommandHead = function()
         vim.cmd('DiffviewOpen HEAD')
