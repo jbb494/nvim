@@ -20,7 +20,8 @@ return { {
         'lua_ls',
         'rust_analyzer',
         'volar',
-        'eslint@4.8.0'
+        'eslint@4.8.0',
+        'ts_ls'
       },
       handlers = {
         function(server_name) -- default handler (optional)
@@ -28,8 +29,8 @@ return { {
             capabilities = capabilities,
           }
         end,
-        ['tsserver'] = function()
-          lspconfig.tsserver.setup {
+        ['ts_ls'] = function()
+          lspconfig.ts_ls.setup {
             capabilities = capabilities,
             root_dir = function(fname)
               local util = require("lspconfig.util")
