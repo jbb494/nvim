@@ -27,11 +27,11 @@ return {
     },
     config = function()
       require('neotest-jest')({
-        jestCommand = "npx jest --",
+        jestCommand = "jest",
         jestConfigFile = function(file)
           return find_closest_jest_config(file)
         end,
-        env = { CI = true },
+        env = { CI = true, TZ = 'UTC' },
         cwd = function(file)
           -- Get directory of the found config or fallback to file directory
           local config_path = find_closest_jest_config(file)
