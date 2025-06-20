@@ -243,6 +243,27 @@ local getStrategyTest = function()
     return strategy
 end
 
+vim.keymap.set('n', '<leader>da', function()
+    local file_path = vim.api.nvim_buf_get_name(0);
+    local app_root_path = file_path:match("(.*[/\\]apps[/\\][^/]+)")
+    if app_root_path then
+        local app_name = app_root_path:match("([^/\\]+)$");
+        print("Attaching to auto-discovered app: " .. app_name);
+        require('dap').run({
+            name = 'Attach to ' .. app_name,
+            type = 'pwa-node',
+            request = 'attach',
+            processId = require 'dap.utils'.pick_process,
+            cwd = app_root_path,
+            sourceMaps = true,
+            outFiles = { app_root_path .. '/dist/**/*.js' },
+            skipFiles = { '<node_internals>/**', '**/node_modules/**' }
+        });
+    else
+        print("Error: Could not determine app from current file. Not in an 'apps/*' directory.");
+    end
+end, { desc = '[T]est' })
+
 vim.keymap.set('n', '<leader>t', function()
     local strategy = getStrategyTest()
     require('neotest').run.run({ strategy = strategy })
