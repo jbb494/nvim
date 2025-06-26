@@ -19,7 +19,6 @@ return { {
       ensure_installed = {
         'lua_ls',
         'rust_analyzer',
-        'volar',
         'eslint@4.8.0',
         'ts_ls'
       },
@@ -58,27 +57,6 @@ return { {
         ['eslint'] = function()
           lspconfig['eslint'].setup {
             capabilities = capabilities,
-          }
-        end,
-        ['volar'] = function()
-          local function get_typescript_server_path(root_dir)
-            local util = require 'lspconfig.util'
-
-            local project_root = util.find_node_modules_ancestor(root_dir)
-            return project_root and (util.path.join(project_root, 'node_modules', 'typescript', 'lib')) or ''
-          end
-
-          lspconfig.volar.setup {
-            capabilities = capabilities,
-            filetypes = { 'vue' },
-            init_options = {
-              vue = {
-                hybridMode = false,
-              },
-              typescript = {
-                tsdk = get_typescript_server_path(vim.fn.getcwd()),
-              },
-            }
           }
         end,
         ['lua_ls'] = function()
