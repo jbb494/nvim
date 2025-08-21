@@ -9,7 +9,7 @@ return {
         vim.cmd('DiffviewOpen origin/main...HEAD')
       end
       local openDiffViewCommandHead = function()
-        vim.cmd('DiffviewOpen HEAD')
+        vim.cmd('DiffviewOpen')
       end
       local openDiffFileHistoryCommand = function()
         vim.cmd('DiffviewFileHistory % --no-merges --imply-local')
