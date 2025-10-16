@@ -5,6 +5,8 @@ interface PendingRequest {
   resolve: (value: unknown) => void;
   reject: (error: Error) => void;
   timeout: Timer;
+  method: string;
+  params: unknown[];
 }
 
 export class NeovimClient {
@@ -20,14 +22,13 @@ export class NeovimClient {
     this.port = port;
   }
 
-  async start(workingDir: string, configPath?: string): Promise<void> {
+  async start(workingDir: string, configPath: string): Promise<void> {
     const args = [
       "--listen",
       `127.0.0.1:${this.port}`,
       "--headless",
-      "--noplugin",
       "-u",
-      configPath || "NONE",
+      configPath,
     ];
 
     this.process = spawn({
@@ -144,7 +145,8 @@ export class NeovimClient {
       this.pendingRequests.delete(id);
 
       if (error) {
-        pending.reject(new Error(`RPC Error: ${JSON.stringify(error)}`));
+        const errorMessage = `RPC Error in ${pending.method}(${JSON.stringify(pending.params)}): ${JSON.stringify(error)}`;
+        pending.reject(new Error(errorMessage));
       } else {
         pending.resolve(result);
       }
@@ -165,10 +167,10 @@ export class NeovimClient {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.pendingRequests.delete(id);
-        reject(new Error(`RPC call timeout: ${method}`));
+        reject(new Error(`RPC call timeout: ${method}(${JSON.stringify(params)})`));
       }, 10000);
 
-      this.pendingRequests.set(id, { resolve, reject, timeout });
+      this.pendingRequests.set(id, { resolve, reject, timeout, method, params });
       this.socket.write(encoded);
     });
   }
