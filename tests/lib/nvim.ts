@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from "bun";
+import { spawn } from "bun";
 import { Packr } from "msgpackr";
 
 interface PendingRequest {
@@ -10,7 +10,7 @@ interface PendingRequest {
 }
 
 export class NeovimClient {
-  process: ChildProcess | null = null;
+  process: any = null;
   private socket: any = null;
   private packr = new Packr({ useRecords: false });
   private rpcId = 0;

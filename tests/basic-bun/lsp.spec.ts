@@ -1,19 +1,12 @@
+import { test, expect, afterEach, beforeEach } from "bun:test";
 import {
-  test,
-  expect,
-  beforeAll,
-  afterAll,
-  afterEach,
-  beforeEach,
-} from "bun:test";
-import { NeovimClient } from "../lib/nvim";
-import {
+  NeovimClient,
   openFile,
   getFileName,
   requestHover,
   setCursorPosition,
   waitForLsp,
-} from "../lib/lsp";
+} from "../lib";
 import { join } from "path";
 
 const scenarioPath = join(import.meta.dir, "scenario");

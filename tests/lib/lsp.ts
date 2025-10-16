@@ -1,9 +1,15 @@
+import { object, string, array, number, parse } from "valibot";
 import { NeovimClient } from "./nvim";
+
+const LspClientSchema = object({
+  id: number(),
+  name: string(),
+});
 
 export async function waitForLsp(
   client: NeovimClient,
   timeoutMs: number = 5000,
-): Promise<void> {
+) {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeoutMs) {
@@ -12,7 +18,11 @@ export async function waitForLsp(
       "return vim.tbl_map(function(c) return {id = c.id, name = c.name} end, vim.lsp.get_clients({bufnr = 0}))",
       [],
     ]);
-    if (lspClients && Array.isArray(lspClients) && lspClients.length > 0) {
+
+    const LspClientsSchema = array(LspClientSchema);
+    const parsed = parse(LspClientsSchema, lspClients);
+
+    if (parsed && parsed.length > 0) {
       return;
     }
 
@@ -22,31 +32,25 @@ export async function waitForLsp(
   throw new Error(`LSP did not attach within ${timeoutMs}ms`);
 }
 
-export async function openFile(
-  client: NeovimClient,
-  path: string,
-): Promise<void> {
+export async function openFile(client: NeovimClient, path: string) {
   await client.call("nvim_command", [`edit ${path}`]);
 }
 
-export async function getFileName(client: NeovimClient): Promise<string> {
+export async function getFileName(client: NeovimClient) {
   const result = await client.call("nvim_call_function", ["expand", ["%"]]);
-  if (typeof result !== "string") {
-    throw new Error(`Expected string from expand('%'), got ${typeof result}`);
-  }
-  return result;
+  return parse(string(), result);
 }
 
 export async function setCursorPosition(
   client: NeovimClient,
   line: number,
   col: number,
-): Promise<void> {
+) {
   // Neovim uses 1-indexed lines for cursor position
   await client.call("nvim_win_set_cursor", [0, [line + 1, col]]);
 }
 
-export async function requestHover(client: NeovimClient): Promise<unknown> {
+export async function requestHover(client: NeovimClient) {
   // Get the word under cursor
   const word = await client.call("nvim_exec_lua", [
     `
@@ -84,17 +88,5 @@ export async function requestHover(client: NeovimClient): Promise<unknown> {
     `,
     [],
   ]);
-  return word;
-}
-
-export async function getCursorPosition(
-  client: NeovimClient,
-): Promise<[number, number]> {
-  const result = await client.call("nvim_win_get_cursor", [0]);
-  if (!Array.isArray(result) || result.length < 2) {
-    throw new Error(
-      `Expected cursor position array, got ${JSON.stringify(result)}`,
-    );
-  }
-  return [result[0] as number, result[1] as number];
+  return parse(string(), word);
 }

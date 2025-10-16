@@ -2,16 +2,14 @@
   "compilerOptions": {
     // Environment setup & latest features
     "lib": ["ESNext"],
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleDetection": "force",
+    "target": "ES2020",
+    "module": "CommonJS",
     "jsx": "react-jsx",
     "allowJs": true,
 
-    // Bundler mode
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
+    // Jest compatibility
+    "moduleResolution": "node",
+    "esModuleInterop": true,
     "noEmit": true,
 
     // Best practices
@@ -26,9 +24,9 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
 
-    // Test types
-    "types": ["bun", "@types/jest"]
+    // Testing
+    "types": ["jest", "@types/node"]
   },
-  "include": ["lib/**/*.ts", "**/*.spec.ts"],
-  "exclude": ["node_modules", "**/scenario/**"]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
 }
