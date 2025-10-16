@@ -11,12 +11,11 @@ import { join } from "path";
 
 const scenarioPath = join(import.meta.dir, "scenario");
 const configPath = join(import.meta.dir, "..", "..", "init.lua");
-const port = 6666;
 
 let client: NeovimClient;
 
 beforeEach(async () => {
-  client = new NeovimClient(port);
+  client = new NeovimClient();
   await client.start(scenarioPath, configPath);
 });
 
@@ -46,15 +45,12 @@ test("should run test under cursor", async () => {
   // Get test output
   const output = await getNeotestOutput(client);
 
-  // Log the result for inspection
-  console.log("Test output:", JSON.stringify(output, null, 2));
-
   // Assert that output is a valid object with expected structure
   expect(output).toEqual({
     failed: 0,
     passed: 1,
     running: 0,
-    skipped: 0,
-    total: 1,
+    skipped: 10,
+    total: 11,
   });
 });

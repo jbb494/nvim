@@ -9,6 +9,7 @@ const config = {
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
   ],
+  testRunner: 'jest-circus/runner',
 };
 
 module.exports = config;

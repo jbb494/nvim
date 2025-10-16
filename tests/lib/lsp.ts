@@ -55,12 +55,19 @@ export async function requestHover(client: NeovimClient) {
   const word = await client.call("nvim_exec_lua", [
     `
   return (function()
+    -- Get the first LSP client and its position encoding
+    local lsp_clients = vim.lsp.get_clients({bufnr = 0})
+    if not lsp_clients or #lsp_clients == 0 then
+      return 'No LSP client available.'
+    end
+    local lsp_client = lsp_clients[1]
+
     -- Safely make the synchronous LSP request with a 1.5-second timeout
     local status, response = pcall(
       vim.lsp.buf_request_sync,
       0, -- current buffer
       'textDocument/hover',
-      vim.lsp.util.make_position_params(),
+      vim.lsp.util.make_position_params(0, lsp_client.offset_encoding),
       1500 -- timeout in milliseconds
     )
 

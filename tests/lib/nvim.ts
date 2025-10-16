@@ -1,5 +1,9 @@
-import { spawn } from "bun";
+import { sleep, spawn } from "bun";
 import { Packr } from "msgpackr";
+import { mkdirSync, existsSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import assert from "assert";
 
 interface PendingRequest {
   resolve: (value: unknown) => void;
@@ -10,26 +14,23 @@ interface PendingRequest {
 }
 
 export class NeovimClient {
-  process: any = null;
+  process: Bun.Subprocess<"ignore", "pipe", "pipe"> | null = null;
   private socket: any = null;
   private packr = new Packr({ useRecords: false });
   private rpcId = 0;
   private pendingRequests = new Map<number, PendingRequest>();
   private buffer = Buffer.alloc(0);
-  private port: number;
+  private socketPath: string | undefined;
 
-  constructor(port: number = 6666) {
-    this.port = port;
-  }
+  constructor() {}
 
   async start(workingDir: string, configPath: string): Promise<void> {
-    const args = [
-      "--listen",
-      `127.0.0.1:${this.port}`,
-      "--headless",
-      "-u",
-      configPath,
-    ];
+    // Create a unique socket path for this test instance
+    const tempDir = join(tmpdir(), "nvim-test-sockets");
+    mkdirSync(tempDir, { recursive: true });
+
+    this.socketPath = join(tempDir, `${Date.now()}.sock`);
+    const args = ["--listen", this.socketPath, "--headless", "-u", configPath];
 
     this.process = spawn({
       cmd: ["nvim", ...args],
@@ -37,14 +38,63 @@ export class NeovimClient {
       stdio: ["ignore", "pipe", "pipe"],
     });
 
+    // ✅ Correct way to read from Bun's streams
+    const pipeStream = async (
+      stream: ReadableStream,
+      callback: (a: string) => void,
+    ) => {
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer = buffer + decoder.decode(value);
+      }
+      callback(buffer);
+    };
+
+    // Start listening without blocking the start method
+    pipeStream(this.process.stderr, (s: string) => {
+      if (
+        s.startsWith("Nvim: Caught deadly signal 'SIGTERM'") ||
+        s.startsWith("W325")
+      ) {
+        console.debug(s);
+        return;
+      }
+
+      throw new Error(`[Neovim STDERR]: ${s}`);
+    });
+
+    pipeStream(this.process.stdout, (s) =>
+      console.debug(`[Neovim STDOUT]: ${s}`),
+    );
+
     await this.waitForConnection(15000);
   }
 
   private async waitForConnection(timeoutMs: number): Promise<void> {
     const net = await import("net");
+    assert(this.socketPath);
 
+    // First, wait for the socket file to be created by nvim
+    const socketFileStartTime = Date.now();
+    while (!existsSync(this.socketPath)) {
+      if (Date.now() - socketFileStartTime > timeoutMs) {
+        throw new Error(
+          `Socket file was not created within ${timeoutMs}ms: ${this.socketPath}`,
+        );
+      }
+      await sleep(100);
+    }
+
+    console.debug(`[NeovimClient] Socket file created: ${this.socketPath}`);
+
+    // Now connect to the socket
     return new Promise<void>((resolve, reject) => {
-      const socket = net.createConnection(this.port, "127.0.0.1");
+      assert(this.socketPath);
+      const socket = net.createConnection(this.socketPath);
       let timeoutId: Timer | null = null;
 
       const onConnect = () => {
@@ -52,13 +102,15 @@ export class NeovimClient {
         socket.removeListener("error", onError);
         this.socket = socket;
         this.setupSocketListeners();
+        console.debug(`[NeovimClient] Connected to socket: ${this.socketPath}`);
         resolve();
       };
 
       const onError = (err: Error) => {
         if (timeoutId) clearTimeout(timeoutId);
         socket.removeListener("connect", onConnect);
-        reject(err);
+        console.error(`[NeovimClient] Socket connection error:`, err);
+        reject(new Error(`Socket connection error: ${err.message}`));
       };
 
       socket.on("connect", onConnect);
@@ -68,7 +120,7 @@ export class NeovimClient {
         socket.removeListener("connect", onConnect);
         socket.removeListener("error", onError);
         socket.destroy();
-        reject(new Error("Connection timeout"));
+        reject(new Error(`Connection timeout to ${this.socketPath}`));
       }, timeoutMs);
     });
   }
@@ -167,22 +219,28 @@ export class NeovimClient {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.pendingRequests.delete(id);
-        reject(new Error(`RPC call timeout: ${method}(${JSON.stringify(params)})`));
+        reject(
+          new Error(`RPC call timeout: ${method}(${JSON.stringify(params)})`),
+        );
       }, 10000);
 
-      this.pendingRequests.set(id, { resolve, reject, timeout, method, params });
+      this.pendingRequests.set(id, {
+        resolve,
+        reject,
+        timeout,
+        method,
+        params,
+      });
       this.socket.write(encoded);
     });
   }
 
   async close(): Promise<void> {
-    if (this.socket) {
-      this.socket.destroy();
-      this.socket = null;
-    }
+    this.socket.destroy();
 
-    if (this.process) {
-      this.process.kill();
-    }
+    assert(this.process);
+
+    this.process.kill();
+    await this.process.exited;
   }
 }

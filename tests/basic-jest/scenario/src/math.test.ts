@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { add, subtract, multiply, divide } from './math';
 
 describe('Math functions', () => {

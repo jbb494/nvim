@@ -5,7 +5,7 @@ local function find_closest_jest_config(file_path)
   -- If not found in the immediate directory, traverse up until we hit a package.json
   local package_json = util.find_package_json_ancestor(file_dir)
   if package_json then
-    for _, config_name in ipairs({ "jest.config.ts", "jest.config.js" }) do
+    for _, config_name in ipairs({ "jest.config.ts", "jest.config.js", "jest.config.cjs" }) do
       local config_path = util.path.join(package_json, config_name)
       if vim.fn.filereadable(config_path) == 1 then
         return config_path
@@ -27,7 +27,15 @@ return {
     },
     config = function()
       require('neotest-jest')({
-        jestCommand = "jest",
+        jestCommand = function(rootDir)
+          local util = require('lspconfig.util')
+          local file_dir = vim.fn.fnamemodify(rootDir, ":h")
+
+          local package_json = util.find_package_json_ancestor(file_dir)
+          local jestCommand = package_json .. "/node_modules/.bin/jest"
+
+          return jestCommand
+        end,
         jestConfigFile = function(file)
           return find_closest_jest_config(file)
         end,

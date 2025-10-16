@@ -11,12 +11,11 @@ import { join } from "path";
 
 const scenarioPath = join(import.meta.dir, "scenario");
 const configPath = join(import.meta.dir, "..", "..", "init.lua");
-const port = 6666;
 
 let client: NeovimClient;
 
 beforeEach(async () => {
-  client = new NeovimClient(port);
+  client = new NeovimClient();
   await client.start(scenarioPath, configPath);
 });
 

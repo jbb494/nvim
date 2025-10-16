@@ -1,4 +1,4 @@
-import { array, number, parse, tuple } from "valibot";
+import { number, parse, tuple } from "valibot";
 import { NeovimClient } from "./nvim";
 
 /**
@@ -9,7 +9,10 @@ export async function setCursorOnSearch(
   client: NeovimClient,
   searchPattern: string,
 ) {
-  await client.call("nvim_exec_lua", [`vim.fn.search('${searchPattern}')`, []]);
+  await client.call("nvim_exec_lua", [
+    `vim.fn.search("${searchPattern.replace(/"/g, '\\"')}")`,
+    [],
+  ]);
 }
 
 export async function getCursorPosition(client: NeovimClient) {
