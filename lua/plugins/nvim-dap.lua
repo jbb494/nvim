@@ -26,6 +26,18 @@ return {
         },
       }
 
+      dap.configurations.typescript = {
+        {
+          type = "pwa-node",
+          request = "launch",
+          name = "Launch file",
+          program = "${file}",
+          console = 'integratedTerminal',
+          cwd = "${workspaceFolder}",
+          stopOnEntry = true
+        },
+      }
+
       dap.set_log_level('ERROR')
     end
   },
