@@ -12,6 +12,7 @@ import {
   unknown,
 } from "valibot";
 import { NeovimClient } from "./nvim";
+import { sendKeys } from "./cursor";
 
 const BreakpointSchema = object({
   line: any(),
@@ -79,10 +80,7 @@ export async function listBreakpoints(
  * Toggle a breakpoint at the current cursor position
  */
 export async function toggleBreakpoint(client: NeovimClient): Promise<void> {
-  await client.call("nvim_exec_lua", [
-    `require('dap').toggle_breakpoint()`,
-    [],
-  ]);
+  await sendKeys(client, "<leader>b");
 }
 
 /**
@@ -119,14 +117,15 @@ export async function getAdapterDetails(
  * Start a debug session and wait for it to initialize
  */
 export async function startDebugSession(client: NeovimClient): Promise<void> {
+  // Send <leader>dc to start debug session
+  await sendKeys(client, "<leader>dc");
+
+  // Wait for session to initialize and stop
   await client.call(
     "nvim_exec_lua",
     [
       `
 local dap = require('dap')
-
-rpc_print("[LUA] Starting debug session with dap.continue()")
-dap.continue()
 
 rpc_print("[LUA] Waiting for session to initialize...")
 
@@ -162,6 +161,7 @@ rpc_print("[LUA] Stopped at entry point, thread: " .. tostring(session.stopped_t
 export async function continueDebugSession(
   client: NeovimClient,
 ): Promise<void> {
+  // Verify session is stopped before continuing
   await client.call(
     "nvim_exec_lua",
     [
@@ -172,9 +172,21 @@ local session = assert(dap.session(), "has active session")
 -- Ensure debugger is already stopped before we call continue
 assert(session.stopped_thread_id ~= nil, "Session is not stopped, cannot continue")
 rpc_print("[LUA] Debugger is stopped at thread: " .. tostring(session.stopped_thread_id))
+`,
+      [],
+    ],
+    null,
+  );
 
-rpc_print("[LUA] Calling dap.continue()")
-dap.continue()
+  // Send <leader>dc to continue
+  await sendKeys(client, "<leader>dc");
+
+  // Wait for debugger to run and stop again
+  await client.call(
+    "nvim_exec_lua",
+    [
+      `
+local dap = require('dap')
 
 -- Phase 1: Wait for the debugger to start running (stopped_thread_id becomes nil)
 rpc_print("[LUA] Phase 1: Waiting for debugger to start running...")

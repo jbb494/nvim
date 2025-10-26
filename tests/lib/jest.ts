@@ -7,6 +7,7 @@ import {
   nullable,
 } from "valibot";
 import { NeovimClient } from "./nvim";
+import { sendKeys } from "./cursor";
 
 const StatusCountsSchema = object({
   total: number(),
@@ -21,7 +22,7 @@ const StatusCountsSchema = object({
  * Simulates pressing <leader>t in Neovim to run the test at cursor position
  */
 export async function runTestUnderCursor(client: NeovimClient) {
-  await client.call("nvim_exec_lua", [`require('neotest').run.run()`, []]);
+  await sendKeys(client, "<leader>t");
 }
 
 /**
