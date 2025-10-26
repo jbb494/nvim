@@ -1,6 +1,6 @@
 import { test, expect, afterEach, beforeEach } from "bun:test";
 import {
-  NeovimClient,
+  setupNvimTest,
   openFile,
   setCursorOnSearch,
   listBreakpoints,
@@ -14,42 +14,27 @@ import { join } from "path";
 const scenarioPath = join(import.meta.dir, "scenario");
 const configPath = join(import.meta.dir, "..", "..", "init.lua");
 
-let client: NeovimClient;
-
-beforeEach(async () => {
-  client = new NeovimClient();
-  await client.start(scenarioPath, configPath);
-
-  if (process.env.DEBUG_NVIM) {
-    await client.waitForUiClient();
-  }
-});
-
-afterEach(async () => {
-  if (process.env.DEBUG_NVIM) {
-    await client.waitForUiDisconnect();
-  }
-
-  await client.close();
-});
+const nvimTest = setupNvimTest(scenarioPath, configPath);
+beforeEach(nvimTest.beforeEach);
+afterEach(nvimTest.afterEach);
 
 test("should set and retrieve a breakpoint in a file", async () => {
   // Open the math.ts file
-  await openFile(client, "src/math.ts");
+  await openFile(nvimTest.client, "src/math.ts");
 
   // Position cursor on a specific line
-  await setCursorOnSearch(client, "return a");
+  await setCursorOnSearch(nvimTest.client, "return a");
 
   // Get current line before setting breakpoint
-  const beforeBPs = await listBreakpoints(client);
+  const beforeBPs = await listBreakpoints(nvimTest.client);
   const breakpointCountBefore = beforeBPs.length;
 
   // Set a breakpoint using dap API
-  await toggleBreakpoint(client);
+  await toggleBreakpoint(nvimTest.client);
   expect(breakpointCountBefore).toEqual(0);
 
   // Check if breakpoints were actually added
-  const afterBPs = await listBreakpoints(client);
+  const afterBPs = await listBreakpoints(nvimTest.client);
   const breakpointCountAfter = afterBPs.length;
 
   expect(breakpointCountAfter).toEqual(1);
@@ -57,27 +42,27 @@ test("should set and retrieve a breakpoint in a file", async () => {
 
 test("should be able to set breakpoints and query DAP state", async () => {
   // Open the debug-example.ts file which calls the multi-variable function
-  await openFile(client, "src/main.ts");
+  await openFile(nvimTest.client, "src/main.ts");
 
   // Position cursor on the function call line
-  await setCursorOnSearch(client, "# First breakpoint");
+  await setCursorOnSearch(nvimTest.client, "# First breakpoint");
 
   // Set a breakpoint at the line where we can inspect all variables
-  await toggleBreakpoint(client);
+  await toggleBreakpoint(nvimTest.client);
 
   // Verify breakpoint was set
-  const breakpointsBefore = await listBreakpoints(client);
+  const breakpointsBefore = await listBreakpoints(nvimTest.client);
   expect(breakpointsBefore.length).toBeGreaterThan(0);
   console.debug("Breakpoints set:", breakpointsBefore.length);
 
   // Start the debug session
-  await startDebugSession(client);
+  await startDebugSession(nvimTest.client);
 
   // Continue to breakpoint
-  await continueDebugSession(client);
+  await continueDebugSession(nvimTest.client);
 
   // Get variables in current scope
-  const variables = await getVariablesInScope(client);
+  const variables = await getVariablesInScope(nvimTest.client);
   console.debug("Variables in scope:", JSON.stringify(variables, null, 2));
 
   // Verify we can access variables a and b from main.ts
@@ -100,6 +85,6 @@ test("should be able to set breakpoints and query DAP state", async () => {
   });
 
   // Verify we still have the breakpoint
-  const breakpointsAfter = await listBreakpoints(client);
+  const breakpointsAfter = await listBreakpoints(nvimTest.client);
   expect(breakpointsAfter.length).toBeGreaterThan(0);
 });

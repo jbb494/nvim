@@ -1,6 +1,6 @@
 import { test, expect, afterEach, beforeEach } from "bun:test";
 import {
-  NeovimClient,
+  setupNvimTest,
   runTestUnderCursor,
   waitForTestResults,
   setCursorOnSearch,
@@ -12,38 +12,31 @@ import { join } from "path";
 const scenarioPath = join(import.meta.dir, "scenario");
 const configPath = join(import.meta.dir, "..", "..", "init.lua");
 
-let client: NeovimClient;
-
-beforeEach(async () => {
-  client = new NeovimClient();
-  await client.start(scenarioPath, configPath);
-});
-
-afterEach(async () => {
-  await client.close();
-});
+const nvimTest = setupNvimTest(scenarioPath, configPath);
+beforeEach(nvimTest.beforeEach);
+afterEach(nvimTest.afterEach);
 
 test("should connect to neovim", async () => {
   // Just verify the connection is working by calling a simple command
-  const result = await client.call("nvim_eval", ["1 + 1"]);
+  const result = await nvimTest.client.call("nvim_eval", ["1 + 1"]);
   expect(result).toBe(2);
 });
 
 test("should run test under cursor", async () => {
   // Open the test file
-  await openFile(client, "src/math.test.ts");
+  await openFile(nvimTest.client, "src/math.test.ts");
 
   // Position cursor on a test
-  await setCursorOnSearch(client, "should add");
+  await setCursorOnSearch(nvimTest.client, "should add");
 
   // Run the test under cursor (simulates pressing <leader>t)
-  await runTestUnderCursor(client);
+  await runTestUnderCursor(nvimTest.client);
 
   // Wait for tests to complete
-  await waitForTestResults(client);
+  await waitForTestResults(nvimTest.client);
 
   // Get test output
-  const output = await getNeotestOutput(client);
+  const output = await getNeotestOutput(nvimTest.client);
 
   // Assert that output is a valid object with expected structure
   expect(output).toEqual({
