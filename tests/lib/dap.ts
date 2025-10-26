@@ -8,6 +8,8 @@ import {
   parse,
   nullable,
   optional,
+  number,
+  unknown,
 } from "valibot";
 import { NeovimClient } from "./nvim";
 
@@ -28,10 +30,16 @@ const AdapterConfigSchema = object({
   has_executable: optional(boolean()),
 });
 
-const SessionStartResultSchema = object({
-  success: boolean(),
-  error: optional(nullable(any())),
+const DAPVariableSchema = object({
+  name: string(),
+  value: string(),
+  type: optional(string()),
+  evaluateName: optional(string()),
+  variablesReference: number(),
+  presentationHint: optional(unknown()),
 });
+
+const VariablesByScopeSchema = record(string(), array(DAPVariableSchema));
 
 /**
  * Get breakpoints grouped by buffer
@@ -108,40 +116,97 @@ export async function getAdapterDetails(
 }
 
 /**
- * Start a debug session
- *
- * NOTE: In a headless Neovim environment, the DAP session may report success
- * but not actually be active due to the async nature of debug adapter protocol.
- * This is a known limitation when testing DAP in non-interactive environments.
+ * Start a debug session and wait for it to initialize
  */
-export async function startDebugSession(
+export async function startDebugSession(client: NeovimClient): Promise<void> {
+  await client.call(
+    "nvim_exec_lua",
+    [
+      `
+local dap = require('dap')
+
+rpc_print("[LUA] Starting debug session with dap.continue()")
+dap.continue()
+
+rpc_print("[LUA] Waiting for session to initialize...")
+
+local initialized = vim.wait(5000, function()
+  local session = dap.session()
+  return session.initialized == true
+end, 10)
+assert(initialized, "Session failed to initialize within 5 seconds")
+rpc_print("[LUA] Session initialized")
+
+rpc_print("[LUA] Waiting for debugger to stop at entry point...")
+local stopped = vim.wait(5000, function()
+  local session = dap.session()
+  assert(session, "has active session")
+  -- rpc_print("[LUA] thread: " .. tostring(session.stopped_thread_id))
+  return session.stopped_thread_id ~= nil
+end, 10)
+assert(stopped, "Debugger did not stop within 5 seconds")
+
+local session = dap.session()
+assert(session, "has active session")
+rpc_print("[LUA] Stopped at entry point, thread: " .. tostring(session.stopped_thread_id))
+`,
+      [],
+    ],
+    null,
+  );
+}
+
+/**
+ * Continue execution until the debugger stops at a breakpoint
+ */
+export async function continueDebugSession(
   client: NeovimClient,
-): Promise<ReturnType<typeof parse<typeof SessionStartResultSchema>>> {
-  const result = await client.call("nvim_exec_lua", [
-    `local dap = require('dap')
-     local ok, err = pcall(function()
-       -- Try to get the current configuration
-       local configs = dap.configurations
-       if not configs or not configs.typescript then
-         error('No typescript configuration found')
-       end
+): Promise<void> {
+  await client.call(
+    "nvim_exec_lua",
+    [
+      `
+local dap = require('dap')
+local session = assert(dap.session(), "has active session")
 
-       -- Try to launch using the first available configuration
-       dap.run(configs.typescript[1])
-     end)
-     return { success = ok, error = tostring(err) }`,
-    [],
-  ]);
+-- Ensure debugger is already stopped before we call continue
+assert(session.stopped_thread_id ~= nil, "Session is not stopped, cannot continue")
+rpc_print("[LUA] Debugger is stopped at thread: " .. tostring(session.stopped_thread_id))
 
-  const parsed = parse(SessionStartResultSchema, result);
+rpc_print("[LUA] Calling dap.continue()")
+dap.continue()
 
-  // If session start was successful, wait for session to be fully initialized
-  if (parsed.success) {
-    // Wait for the debug adapter to initialize
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  }
+-- Phase 1: Wait for the debugger to start running (stopped_thread_id becomes nil)
+rpc_print("[LUA] Phase 1: Waiting for debugger to start running...")
+local is_running = vim.wait(5000, function()
+  local current_session = dap.session()
+  if not current_session then
+    return false
+  end
+  return current_session.stopped_thread_id == nil
+end, 10)
+assert(is_running, "Debugger did not start running within 5 seconds")
+rpc_print("[LUA] Debugger is now running")
 
-  return parsed;
+-- Phase 2: Wait for the debugger to stop again (stopped_thread_id becomes non-nil)
+rpc_print("[LUA] Phase 2: Waiting for debugger to stop at breakpoint...")
+local stopped = vim.wait(5000, function()
+  local current_session = dap.session()
+  if not current_session then
+    return false
+  end
+  return current_session.stopped_thread_id ~= nil
+end, 10)
+
+assert(stopped, "Debugger did not stop within 5 seconds")
+local final_session = dap.session()
+assert(final_session, "has active session")
+rpc_print("[LUA] Debugger stopped at thread: " .. tostring(final_session.stopped_thread_id))
+`,
+      [],
+    ],
+    null,
+  );
 }
 
 /**
@@ -187,172 +252,96 @@ export async function waitForBreakpoint(
 }
 
 /**
- * Get variable values from the current frame
+ * Get variables in current scope
+ * Returns variables grouped by scope name (e.g., "Module", "Local", etc.)
  */
-export async function getVariables(
+export async function getVariablesInScope(
   client: NeovimClient,
-): Promise<Record<string, any>> {
+): Promise<ReturnType<typeof parse<typeof VariablesByScopeSchema>>> {
   const result = await client.call("nvim_exec_lua", [
-    `local dap = require('dap')
-     local session = dap.session()
-     if not session or not session.stopped_thread_id then
-       return {}
-     end
+    `
+local dap = require('dap')
+local session = assert(dap.session(), "has active session")
+assert(session.stopped_thread_id, "Session must be stopped")
 
-     local thread_id = session.stopped_thread_id
-     local frame_id = session.frames[thread_id] and session.frames[thread_id][1]
+-- Step 1: Get stack trace for the stopped thread
+local stacktrace_response = nil
+local stacktrace_finished = false
 
-     if not frame_id then
-       return {}
-     end
+session:request("stackTrace", { threadId = session.stopped_thread_id, startFrame = 0 }, function(err, result)
+  if err then
+    stacktrace_response = { err = err }
+  else
+    stacktrace_response = { result = result }
+  end
+  stacktrace_finished = true
+end)
 
-     local variables = {}
+local stacktrace_success = vim.wait(5000, function()
+  return stacktrace_finished
+end, 10)
 
-     if session.capabilities and session.capabilities.supportsVariables then
-       local ok, scopes = pcall(function()
-         return session:request('scopes', { frameId = frame_id })
-       end)
+assert(stacktrace_success, "StackTrace request timed out")
+assert(not stacktrace_response.err, "StackTrace request failed: " .. vim.inspect(stacktrace_response.err))
 
-       if ok and scopes then
-         for _, scope in ipairs(scopes.scopes or {}) do
-           if scope.variablesReference and scope.variablesReference > 0 then
-             local ok, vars = pcall(function()
-               return session:request('variables', { variablesReference = scope.variablesReference })
-             end)
+local frames = stacktrace_response.result.stackFrames
+assert(frames and #frames > 0, "No stack frames available")
+local current_frame = frames[1]
 
-             if ok and vars then
-               for _, var in ipairs(vars.variables or {}) do
-                 variables[var.name] = var.value
-               end
-             end
-           end
-         end
-       end
-     end
+-- Step 2: Get scopes for current frame
+local scopes_response = nil
+local scopes_finished = false
 
-     return variables`,
+session:request("scopes", { frameId = current_frame.id }, function(err, result)
+  if err then
+    scopes_response = { err = err }
+  else
+    scopes_response = { result = result }
+  end
+  scopes_finished = true
+end)
+
+local scopes_success = vim.wait(5000, function()
+  return scopes_finished
+end, 10)
+
+assert(scopes_success, "Scopes request timed out")
+assert(not scopes_response.err, "Scopes request failed: " .. vim.inspect(scopes_response.err))
+
+local scopes = scopes_response.result.scopes
+
+-- Step 3: Get variables for each non-expensive scope
+local all_variables = {}
+
+for _, scope in ipairs(scopes) do
+  if not scope.expensive then  -- Skip expensive scopes like "Global"
+    local vars_response = nil
+    local vars_finished = false
+    
+    session:request("variables", { variablesReference = scope.variablesReference }, function(err, result)
+      if err then
+        vars_response = { err = err }
+      else
+        vars_response = { result = result }
+      end
+      vars_finished = true
+    end)
+    
+    local vars_success = vim.wait(5000, function()
+      return vars_finished
+    end, 10)
+    
+    assert(vars_success, "Variables request timed out for scope: " .. scope.name)
+    assert(not vars_response.err, "Variables request failed for scope " .. scope.name .. ": " .. vim.inspect(vars_response.err))
+    
+    all_variables[scope.name] = vars_response.result.variables
+  end
+end
+
+return all_variables
+`,
     [],
   ]);
 
-  return result as Record<string, any>;
-}
-
-/**
- * Get debug session state with diagnostic information
- * Useful for debugging why variables aren't appearing
- */
-export async function getSessionDebugInfo(
-  client: NeovimClient,
-): Promise<Record<string, any>> {
-  const result = await client.call("nvim_exec_lua", [
-    `local dap = require('dap')
-     local session = dap.session()
-
-     local info = {
-       session_active = session ~= nil,
-       stopped_thread_id = session and session.stopped_thread_id or nil,
-       has_frames = session and session.frames ~= nil,
-       capabilities_support_variables = session and session.capabilities and session.capabilities.supportsVariables or false,
-     }
-
-     if session and session.stopped_thread_id then
-       info.thread_id = session.stopped_thread_id
-       local frames = session.frames[session.stopped_thread_id]
-       info.num_frames = frames and #frames or 0
-
-       if frames and frames[1] then
-         local frame = frames[1]
-         info.first_frame_id = frame.id
-         info.first_frame_name = frame.name
-         info.first_frame_source = frame.source and frame.source.path or nil
-
-         -- Try to get scopes
-         local ok, scopes = pcall(function()
-           return session:request('scopes', { frameId = frame.id })
-         end)
-
-         if ok and scopes then
-           info.num_scopes = #(scopes.scopes or {})
-           info.scopes_detail = {}
-           for _, scope in ipairs(scopes.scopes or {}) do
-             table.insert(info.scopes_detail, {
-               name = scope.name,
-               variablesReference = scope.variablesReference,
-               indexed = scope.indexed,
-               named = scope.named
-             })
-
-             -- Try to get variables for first scope
-             if scope.variablesReference and scope.variablesReference > 0 then
-               local ok2, vars = pcall(function()
-                 return session:request('variables', { variablesReference = scope.variablesReference })
-               end)
-
-               if ok2 and vars then
-                 info.num_variables_in_first_scope = #(vars.variables or {})
-               end
-             end
-           end
-         end
-       end
-     end
-
-     return info`,
-    [],
-  ]);
-
-  return result as Record<string, any>;
-}
-
-/**
- * Get the current frame location
- */
-export async function getCurrentFrameLocation(
-  client: NeovimClient,
-): Promise<{ file: string; line: number } | null> {
-  const result = await client.call("nvim_exec_lua", [
-    `local dap = require('dap')
-     local session = dap.session()
-     if not session or not session.stopped_thread_id then
-       return nil
-     end
-
-     local thread_id = session.stopped_thread_id
-     local frame = session.frames[thread_id] and session.frames[thread_id][1]
-
-     if not frame or not frame.source or not frame.source.path then
-       return nil
-     end
-
-     return {
-       file = frame.source.path,
-       line = frame.line
-     }`,
-    [],
-  ]);
-
-  return result as { file: string; line: number } | null;
-}
-
-/**
- * Continue execution
- */
-export async function continueExecution(client: NeovimClient): Promise<void> {
-  await client.call("nvim_exec_lua", [
-    `require('dap').continue()`,
-    [],
-  ]);
-}
-
-/**
- * Stop the debug session
- */
-export async function stopDebugSession(client: NeovimClient): Promise<void> {
-  await client.call("nvim_exec_lua", [
-    `local dap = require('dap')
-     if dap.session() then
-       dap.terminate()
-     end`,
-    [],
-  ]);
+  return parse(VariablesByScopeSchema, result);
 }

@@ -12,4 +12,4 @@ const config = {
   testRunner: 'jest-circus/runner',
 };
 
-module.exports = config;
+export default config;

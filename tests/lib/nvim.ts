@@ -1,6 +1,6 @@
 import { sleep, spawn } from "bun";
-import { Packr } from "msgpackr";
-import { mkdirSync, existsSync } from "fs";
+import { Packr, Unpackr } from "msgpackr";
+import { mkdirSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import assert from "assert";
@@ -14,7 +14,7 @@ interface PendingRequest {
 }
 
 export class NeovimClient {
-  process: Bun.Subprocess<"ignore", "pipe", "pipe"> | null = null;
+  process: Bun.Subprocess<"ignore", "ignore", "ignore"> | null = null;
   private socket: any = null;
   private packr = new Packr({ useRecords: false });
   private rpcId = 0;
@@ -35,43 +35,20 @@ export class NeovimClient {
     this.process = spawn({
       cmd: ["nvim", ...args],
       cwd: workingDir,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["ignore", "ignore", "ignore"],
     });
-
-    // ✅ Correct way to read from Bun's streams
-    const pipeStream = async (
-      stream: ReadableStream,
-      callback: (a: string) => void,
-    ) => {
-      const reader = stream.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer = buffer + decoder.decode(value);
-      }
-      callback(buffer);
-    };
-
-    // Start listening without blocking the start method
-    pipeStream(this.process.stderr, (s: string) => {
-      if (
-        s.startsWith("Nvim: Caught deadly signal 'SIGTERM'") ||
-        s.startsWith("W325")
-      ) {
-        console.debug(s);
-        return;
-      }
-
-      throw new Error(`[Neovim STDERR]: ${s}`);
-    });
-
-    pipeStream(this.process.stdout, (s) =>
-      console.debug(`[Neovim STDOUT]: ${s}`),
-    );
 
     await this.waitForConnection(15000);
+    await this.injectHelpers();
+  }
+
+  private async injectHelpers(): Promise<void> {
+    const helpersPath = join(__dirname, "nvim-helpers.lua");
+    const luaCode = readFileSync(helpersPath, "utf-8");
+
+    // Execute the helper module and call setup()
+    // The lua file evaluates to M (the module table), so we can call setup() on it
+    await this.call("nvim_exec_lua", [luaCode + ".setup()", []]);
   }
 
   private async waitForConnection(timeoutMs: number): Promise<void> {
@@ -141,34 +118,27 @@ export class NeovimClient {
   }
 
   private decodeMessages(): void {
-    let offset = 0;
+    try {
+      // Use unpackMultiple to decode all complete messages from the buffer
+      const decoder = new Unpackr({ useRecords: false }) as any;
+      const messages = decoder.unpackMultiple(this.buffer);
 
-    while (offset < this.buffer.length) {
-      try {
-        const remaining = this.buffer.slice(offset);
-        const decoder = this.packr as any;
-        const decoded = decoder.unpack(remaining);
-
-        const bytesRead = decoder.lastDecodeBytes || decoder.offset || 0;
-
-        if (bytesRead === 0 || bytesRead === undefined) {
-          break;
-        }
-
-        offset += bytesRead;
-        this.handleMessage(decoded);
-      } catch (error) {
-        // If it's an incomplete message error, stop decoding
-        if ((error as any).message?.includes("Unexpected end")) {
-          break;
-        }
-        // Any other error should be thrown
-        throw error;
+      // Handle each decoded message
+      for (const message of messages) {
+        this.handleMessage(message);
       }
-    }
 
-    if (offset > 0) {
-      this.buffer = this.buffer.slice(offset);
+      // Clear the buffer after successfully decoding messages
+      if (messages.length > 0) {
+        this.buffer = Buffer.alloc(0);
+      }
+    } catch (error) {
+      // If it's an incomplete message error, keep the buffer for next time
+      if ((error as any).message?.includes("Unexpected end")) {
+        return;
+      }
+      // Any other error should be thrown
+      throw error;
     }
   }
 
@@ -197,17 +167,40 @@ export class NeovimClient {
       this.pendingRequests.delete(id);
 
       if (error) {
-        const errorMessage = `RPC Error in ${pending.method}(${JSON.stringify(pending.params)}): ${JSON.stringify(error)}`;
+        // Format the error message to be more readable by replacing escaped newlines
+        const paramsStr = JSON.stringify(pending.params);
+        const errorStr = JSON.stringify(error);
+
+        // Replace \n with actual newlines for better readability
+        const formattedParams = paramsStr.replace(/\\n/g, "\n");
+        const formattedError = errorStr.replace(/\\n/g, "\n");
+
+        const errorMessage = `RPC Error in ${pending.method}(${formattedParams}): ${formattedError}`;
         pending.reject(new Error(errorMessage));
       } else {
         pending.resolve(result);
+      }
+    } else if (type === 2) {
+      // Type 2 = Notification [2, method, params]
+      const [, method, params] = message as [number, string, unknown[]];
+
+      if (method === "log_message") {
+        console.debug(`[Neovim RPC]: ${params[0]}`);
+      } else {
+        throw new Error(`[Neovim RPC] Unknown notification: ${method}`, {
+          cause: params,
+        });
       }
     } else {
       throw new Error(`Unsupported message type: ${type}`);
     }
   }
 
-  async call(method: string, params: unknown[] = []): Promise<unknown> {
+  async call(
+    method: string,
+    params: unknown[] = [],
+    timeoutMs: number | null = 10000,
+  ): Promise<unknown> {
     if (!this.socket) {
       throw new Error("Not connected to Neovim");
     }
@@ -217,22 +210,59 @@ export class NeovimClient {
     const encoded = this.packr.encode(request);
 
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this.pendingRequests.delete(id);
-        reject(
-          new Error(`RPC call timeout: ${method}(${JSON.stringify(params)})`),
-        );
-      }, 10000);
+      let timeout: Timer | null = null;
+
+      if (timeoutMs !== null) {
+        timeout = setTimeout(() => {
+          this.pendingRequests.delete(id);
+          reject(
+            new Error(`RPC call timeout: ${method}(${JSON.stringify(params)})`),
+          );
+        }, timeoutMs);
+      }
 
       this.pendingRequests.set(id, {
         resolve,
         reject,
-        timeout,
+        timeout: timeout!,
         method,
         params,
       });
       this.socket.write(encoded);
     });
+  }
+
+  async waitForUiClient(timeoutMs: number = 60000): Promise<void> {
+    console.log(`\n🔌 Waiting for UI client to connect...`);
+    console.log(
+      `   Connect with: nvim --server ${this.socketPath} --remote-ui\n`,
+    );
+
+    const luaCode = `
+      local success = vim.wait(${timeoutMs}, function()
+        return #vim.api.nvim_list_uis() > 0
+      end, 100)
+      assert(success, 'Timeout waiting for UI client to attach')
+      return true
+    `;
+
+    await this.call("nvim_exec_lua", [luaCode, []], null);
+    console.log("✅ UI client connected!\n");
+  }
+
+  async waitForUiDisconnect(): Promise<void> {
+    console.log("\n⏸️  Test finished. Close the nvim UI to continue...\n");
+
+    while (true) {
+      const uis = (await this.call("nvim_list_uis", [])) as unknown[];
+
+      if (uis.length === 0) {
+        console.log("✅ UI client disconnected, continuing...\n");
+        return;
+      }
+
+      await sleep(500);
+    }
   }
 
   async close(): Promise<void> {

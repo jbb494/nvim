@@ -236,7 +236,7 @@ end, { desc = '[D]ebug hover([K])' })
 
 local getStrategyTest = function()
     local breakpoints = require('dap.breakpoints').get()
-    local strategy
+    local strategy = 'integrated'
     if not (next(breakpoints) == nil) then
         strategy = 'dap'
     end

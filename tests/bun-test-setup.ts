@@ -1,3 +1,4 @@
-// This code will run before any of your test files.
-// It replaces console.debug globally for the entire test run.
-console.debug = () => {};
+// Only suppress debug logs if DEBUG_NVIM is not set
+if (!process.env.DEBUG_NVIM) {
+  console.debug = () => {};
+}
