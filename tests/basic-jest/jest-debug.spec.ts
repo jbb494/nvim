@@ -9,6 +9,10 @@ import {
   listBreakpoints,
   waitForSessionInitialized,
   waitForSessionStopped,
+  debugContinue,
+  waitForSessionRunning,
+  waitForTestResults,
+  getNeotestOutput,
 } from "../lib";
 import { join } from "path";
 
@@ -67,4 +71,19 @@ test("should debug a test and inspect variables at breakpoint", async () => {
     value: "3",
     type: "number",
   });
-});
+
+  // Continue the debug session to let the test complete
+  await debugContinue(nvimTest.client);
+  await waitForSessionRunning(nvimTest.client, 5000);
+
+  // Wait for the test to finish
+  await waitForTestResults(nvimTest.client);
+
+  // Get test results and verify the test passed
+  const output = await getNeotestOutput(nvimTest.client);
+
+  expect(output).toMatchObject({
+    failed: 0,
+    passed: expect.any(Number),
+  });
+}, 10000);

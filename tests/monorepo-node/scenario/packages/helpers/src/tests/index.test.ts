@@ -3,7 +3,10 @@ import { add, multiply } from '../index';
 describe('helpers', () => {
   describe('add', () => {
     it('should add two numbers', () => {
-      expect(add(2, 3)).toBe(5);
+      const a = 2;
+      const b = 3;
+      const result = add(a, b);
+      expect(result).toBe(5);
     });
 
     it('should handle negative numbers', () => {

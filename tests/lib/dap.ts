@@ -235,7 +235,7 @@ rpc_print("[LUA] Debugger stopped at thread: " .. tostring(session.stopped_threa
  * Wait for debugger to start running (stopped_thread_id becomes nil)
  * Internal helper used by continueDebugSession
  */
-async function waitForSessionRunning(
+export async function waitForSessionRunning(
   client: NeovimClient,
   timeoutMs: number = 5000,
 ): Promise<void> {
@@ -280,7 +280,7 @@ export async function toggleBreakpoint(client: NeovimClient): Promise<void> {
  * Start/continue debug session by sending <leader>dc
  * Internal helper used by startDebugSession and continueDebugSession
  */
-async function debugContinue(client: NeovimClient): Promise<void> {
+export async function debugContinue(client: NeovimClient): Promise<void> {
   await sendKeys(client, "<leader>dc");
 }
 
@@ -295,32 +295,5 @@ async function debugContinue(client: NeovimClient): Promise<void> {
 export async function startDebugSession(client: NeovimClient): Promise<void> {
   await debugContinue(client);
   await waitForSessionInitialized(client, 5000);
-  await waitForSessionStopped(client, 5000);
-}
-
-/**
- * Continue execution until the debugger stops at a breakpoint
- * This is a convenience function that combines debugContinue + waiters
- */
-export async function continueDebugSession(
-  client: NeovimClient,
-): Promise<void> {
-  // Verify session is stopped before continuing
-  await client.call(
-    "nvim_exec_lua",
-    [
-      `
-local dap = require('dap')
-local session = assert(dap.session(), "has active session")
-assert(session.stopped_thread_id ~= nil, "Session is not stopped, cannot continue")
-rpc_print("[LUA] Debugger is stopped at thread: " .. tostring(session.stopped_thread_id))
-`,
-      [],
-    ],
-    null,
-  );
-
-  await debugContinue(client);
-  await waitForSessionRunning(client, 5000);
   await waitForSessionStopped(client, 5000);
 }

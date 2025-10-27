@@ -6,8 +6,9 @@ import {
   listBreakpoints,
   toggleBreakpoint,
   startDebugSession,
-  continueDebugSession,
   getVariablesInScope,
+  debugContinue,
+  waitForSessionRunning,
 } from "../lib";
 import { join } from "path";
 
@@ -54,11 +55,16 @@ test("should be able to set breakpoints and query DAP state", async () => {
   const breakpointsBefore = await listBreakpoints(nvimTest.client);
   expect(breakpointsBefore.length).toBeGreaterThan(0);
 
-  // Start the debug session
+  // Start the debug session (will initialize and stop at entry)
   await startDebugSession(nvimTest.client);
 
-  // Continue to breakpoint
-  await continueDebugSession(nvimTest.client);
+  // Continue to our breakpoint
+  await debugContinue(nvimTest.client);
+  await waitForSessionRunning(nvimTest.client, 5000);
+
+  // Wait for debugger to stop at our breakpoint
+  // (Using a simple sleep since we know it should stop quickly)
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // Get variables in current scope
   const variables = await getVariablesInScope(nvimTest.client);
@@ -85,4 +91,8 @@ test("should be able to set breakpoints and query DAP state", async () => {
   // Verify we still have the breakpoint
   const breakpointsAfter = await listBreakpoints(nvimTest.client);
   expect(breakpointsAfter.length).toBeGreaterThan(0);
-});
+
+  // Continue debug session to let the program complete
+  await debugContinue(nvimTest.client);
+  await waitForSessionRunning(nvimTest.client, 5000);
+}, 10000);

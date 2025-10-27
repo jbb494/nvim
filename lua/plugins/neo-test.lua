@@ -26,24 +26,19 @@ return {
       'nvim-neotest/neotest-jest',
     },
     config = function()
-      require('neotest-jest')({
-        jestCommand = function(rootDir)
-          return "npx jest"
-        end,
-        jestConfigFile = function(file)
-          return find_closest_jest_config(file)
-        end,
-        env = { CI = true, TZ = 'UTC' },
-        cwd = function(file)
-          -- Get directory of the found config or fallback to file directory
-          local config_path = find_closest_jest_config(file)
-          return vim.fn.fnamemodify(config_path, ":h")
-        end
-      })
-
       require("neotest").setup({
         adapters = {
-          require('neotest-jest')
+          require('neotest-jest')({
+            jestConfigFile = function(file)
+              return find_closest_jest_config(file)
+            end,
+            env = { CI = true, TZ = 'UTC' },
+            cwd = function(file)
+              -- Get directory of the found config or fallback to file directory
+              local config_path = find_closest_jest_config(file)
+              return vim.fn.fnamemodify(config_path, ":h")
+            end,
+          })
         },
       })
     end
