@@ -43,17 +43,11 @@ test("should debug a test and inspect variables at breakpoint", async () => {
   await runTestUnderCursor(nvimTest.client);
 
   // Wait for debug session to initialize and stop at breakpoint
-  console.debug("Waiting for debug session to initialize...");
   await waitForSessionInitialized(nvimTest.client, 10000);
-  console.debug("Debug session initialized");
-
-  console.debug("Waiting for debugger to stop at breakpoint...");
   await waitForSessionStopped(nvimTest.client, 10000);
-  console.debug("Debugger stopped at breakpoint");
 
   // Get variables in current scope
   const variables = await getVariablesInScope(nvimTest.client);
-  console.debug("Variables in scope:", JSON.stringify(variables, null, 2));
 
   // Verify we can access variables a and b from the test
   const localVars = variables.Local || variables.Module || [];
@@ -73,6 +67,4 @@ test("should debug a test and inspect variables at breakpoint", async () => {
     value: "3",
     type: "number",
   });
-
-  console.debug("✅ Successfully debugged test and inspected variables!");
 });

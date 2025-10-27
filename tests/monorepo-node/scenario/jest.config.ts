@@ -1,10 +1,11 @@
+/** @type {import('jest').Config} */
 const config = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  testMatch: ['**/src/tests/**/*.test.ts'],
-  moduleNameMapper: {
-    '^@monorepo/(.*)$': '<rootDir>/packages/$1/src',
-  },
+  preset: "ts-jest",
+  testEnvironment: "node",
+  roots: ["<rootDir>"],
+  testMatch: ["**/src/tests/**/*.test.ts"],
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
+  testRunner: "jest-circus/runner",
 };
 
 export default config;

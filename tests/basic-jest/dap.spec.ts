@@ -53,7 +53,6 @@ test("should be able to set breakpoints and query DAP state", async () => {
   // Verify breakpoint was set
   const breakpointsBefore = await listBreakpoints(nvimTest.client);
   expect(breakpointsBefore.length).toBeGreaterThan(0);
-  console.debug("Breakpoints set:", breakpointsBefore.length);
 
   // Start the debug session
   await startDebugSession(nvimTest.client);
@@ -63,7 +62,6 @@ test("should be able to set breakpoints and query DAP state", async () => {
 
   // Get variables in current scope
   const variables = await getVariablesInScope(nvimTest.client);
-  console.debug("Variables in scope:", JSON.stringify(variables, null, 2));
 
   // Verify we can access variables a and b from main.ts
   const moduleVars = variables.Module;

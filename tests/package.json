@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint eslint.config.js --no-warn-ignored 2>/dev/null",
     "build": "tsc --noEmit",
-    "test": "bun test --bail ./basic-bun/*spec.ts ./basic-jest/*spec.ts"
+    "test": "bun test --bail ./basic-bun/*spec.ts ./basic-jest/*spec.ts ./monorepo-node/*spec.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

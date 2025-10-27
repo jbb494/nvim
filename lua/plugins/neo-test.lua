@@ -28,13 +28,7 @@ return {
     config = function()
       require('neotest-jest')({
         jestCommand = function(rootDir)
-          local util = require('lspconfig.util')
-          local file_dir = vim.fn.fnamemodify(rootDir, ":h")
-
-          local package_json = util.find_package_json_ancestor(file_dir)
-          local jestCommand = package_json .. "/node_modules/.bin/jest"
-
-          return jestCommand
+          return "npx jest"
         end,
         jestConfigFile = function(file)
           return find_closest_jest_config(file)
