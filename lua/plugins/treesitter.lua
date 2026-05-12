@@ -1,15 +1,20 @@
 return {
   {
     'nvim-treesitter/nvim-treesitter',
+    branch = 'main',
+    lazy = false,
     build = ':TSUpdate',
     config = function()
-      ---@diagnostic disable-next-line: missing-fields
-      require('nvim-treesitter.configs').setup {
-        ensure_installed = { 'bash', 'c', 'html', 'lua', 'markdown', 'vim', 'vimdoc', 'javascript', 'typescript', "markdown_inline", 'vue', 'css' },
-        auto_install = true,
-        highlight = { enable = true },
-        indent = { enable = true },
+      require('nvim-treesitter').install {
+        'bash', 'c', 'css', 'html', 'javascript', 'lua', 'markdown',
+        'markdown_inline', 'typescript', 'vim', 'vimdoc', 'vue',
       }
+
+      vim.api.nvim_create_autocmd('FileType', {
+        callback = function(args)
+          pcall(vim.treesitter.start, args.buf)
+        end,
+      })
     end,
-  }
+  },
 }
