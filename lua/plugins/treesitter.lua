@@ -6,7 +6,7 @@ return {
     build = ':TSUpdate',
     config = function()
       require('nvim-treesitter').install {
-        'bash', 'c', 'css', 'html', 'javascript', 'lua', 'markdown',
+        'bash', 'c', 'css', 'html', 'javascript', 'kotlin', 'lua', 'markdown',
         'markdown_inline', 'typescript', 'vim', 'vimdoc', 'vue',
       }
 

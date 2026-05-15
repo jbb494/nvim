@@ -20,7 +20,8 @@ return { {
         'lua_ls',
         'rust_analyzer',
         'eslint@4.8.0',
-        'ts_ls'
+        'ts_ls',
+        'kotlin_language_server',
       },
       handlers = {
         function(server_name) -- default handler (optional)
